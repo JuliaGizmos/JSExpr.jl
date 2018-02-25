@@ -18,7 +18,7 @@ The `JSString` object wraps a Julia string. You can access the plain string from
 
 ## Interpolation
 
-You can interpolate Julia objects or `JSString` expressions (i.e. result of `@js` macro invocations) in a `@js` macro.
+You can interpolate Julia objects or `JSString` expressions (i.e. result of `@js` macro invocations) in a `@js` macrocall.
 
 ```julia
 julia> foo = 42
@@ -31,7 +31,7 @@ julia> f = @js array -> array.map($callback)
 WebIO.JSString("(function (array){return array.map((function (a){return (a+42)}))})")
 ```
 
-JSON encoding a `JSString` or an object containing it serializes it as a string.
+Converting a `JSString` or an object containing it to JSON serializes JSString as a string.
 
 ```julia
 julia> JSON.print(Dict("foo" => "bar", "bar"=>f))
