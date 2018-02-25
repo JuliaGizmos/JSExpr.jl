@@ -14,10 +14,6 @@ jsstring(x) = jsexpr(x).s
 macro new(x) esc(Expr(:new, x)) end
 macro var(x) esc(Expr(:var, x)) end
 
-macro js_str(s)
-    :(JSString($(esc(s))))
-end
-
 macro js(expr)
     :(jsexpr($(Expr(:quote, expr))))
 end
