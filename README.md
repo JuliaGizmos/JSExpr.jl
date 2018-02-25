@@ -1,5 +1,9 @@
 # JSExpr
 
+| Build | Coverage |
+|-------|----------|
+| [![Build Status](https://travis-ci.org/JuliaGizmos/JSExpr.jl.svg?branch=master)](https://travis-ci.org/JuliaGizmos/JSExpr.jl) | [![codecov](https://codecov.io/gh/JuliaGizmos/JSExpr.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaGizmos/JSExpr.jl)
+
 This package provides the `@js` macro which translates a Julia expression to JavaScript.
 
 ## Example
