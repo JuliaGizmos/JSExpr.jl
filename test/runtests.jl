@@ -1,4 +1,4 @@
-using JSExprs
+using JSExpr
 using Base.Test
 
 @testset "@js_str" begin

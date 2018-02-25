@@ -1,4 +1,4 @@
-module JSExprs
+module JSExpr
 
 using JSON, WebIO, MacroTools
 
@@ -185,6 +185,7 @@ function jsexpr(io, x::Expr)
     x = rmlines(x)
     @match x begin
         d(xs__) => dict_expr(io, xs)
+        Dict(xs__) => dict_expr(io, xs)
         $(Expr(:comparison, :_, :(==), :_)) => jsexpr_joined(io, [x.args[1], x.args[3]], "==")    # 0.4
 
         # must include this particular `:call` expr before the catchall below
@@ -195,6 +196,10 @@ function jsexpr(io, x::Expr)
         (a_[] = val_) => obs_set_expr(io, a, val)
         (a_ = b_) => jsexpr_joined(io, [a, b], "=")
         (a_ += b_) => jsexpr_joined(io, [a, b], "+=")
+        (a_ -= b_) => jsexpr_joined(io, [a, b], "-=")
+        (a_ *= b_) => jsexpr_joined(io, [a, b], "*=")
+        (a_ &= b_) => jsexpr_joined(io, [a, b], "&=")
+        (a_ |= b_) => jsexpr_joined(io, [a, b], "|=")
         (a_ && b_) => jsexpr_joined(io, [a, b], "&&")
         (a_ || b_) => jsexpr_joined(io, [a, b], "||")
         $(Expr(:if, :__)) => if_expr(io, x.args)
