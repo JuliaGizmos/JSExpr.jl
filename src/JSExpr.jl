@@ -1,22 +1,14 @@
 module JSExpr
 
-using JSON, WebIO, MacroTools
-
+using JSON, MacroTools, WebIO
 export JSString, @js, @js_str
 
-import WebIO: JSEvalSerialization, JSString
-jsexpr(io, x) = JSON.show_json(io, JSEvalSerialization(), x)
-
-jsexpr(x) = JSString(sprint(jsexpr, x))
-
-jsstring(x) = jsexpr(x).s
-
-macro new(x) esc(Expr(:new, x)) end
-macro var(x) esc(Expr(:var, x)) end
+import WebIO: JSString
 
 macro js(expr)
     :(jsexpr($(Expr(:quote, expr))))
 end
+
 
 # Expressions
 
@@ -67,7 +59,7 @@ function obs_set_expr(io, x, val)
     print(io, ")")
 end
 
-function jsexpr(io, o::Observable)
+function jsexpr(io, o::WebIO.Observable)
     if !haskey(observ_id_dict, o)
         error("No scope associated with observer being interpolated")
     end
@@ -181,7 +173,6 @@ function jsexpr(io, x::Expr)
     x = rmlines(x)
     @match x begin
         d(xs__) => dict_expr(io, xs)
-        Dict(xs__) => dict_expr(io, xs)
         $(Expr(:comparison, :_, :(==), :_)) => jsexpr_joined(io, [x.args[1], x.args[3]], "==")    # 0.4
 
         # must include this particular `:call` expr before the catchall below
@@ -192,10 +183,6 @@ function jsexpr(io, x::Expr)
         (a_[] = val_) => obs_set_expr(io, a, val)
         (a_ = b_) => jsexpr_joined(io, [a, b], "=")
         (a_ += b_) => jsexpr_joined(io, [a, b], "+=")
-        (a_ -= b_) => jsexpr_joined(io, [a, b], "-=")
-        (a_ *= b_) => jsexpr_joined(io, [a, b], "*=")
-        (a_ &= b_) => jsexpr_joined(io, [a, b], "&=")
-        (a_ |= b_) => jsexpr_joined(io, [a, b], "|=")
         (a_ && b_) => jsexpr_joined(io, [a, b], "&&")
         (a_ || b_) => jsexpr_joined(io, [a, b], "||")
         $(Expr(:if, :__)) => if_expr(io, x.args)
@@ -216,5 +203,8 @@ function jsexpr(io, x::Expr)
         _ => error("JSExpr: Unsupported `$(x.head)` expression, $x")
     end
 end
+
+macro new(x) esc(Expr(:new, x)) end
+macro var(x) esc(Expr(:var, x)) end
 
 end # module
