@@ -44,7 +44,7 @@ julia> JSON.print(Dict("foo" => "bar", "bar"=>f))
 This is not ideal when you want to use the serialized output as JavaScript, for example in a `<script>` tag. In this case, you should use `JSExpr.jsexpr`
 
 ```julia
-julia> JSExpr.jsexpr(Dict("foo" => "bar", "bar"=>f))
+julia> @js $(Dict("foo" => "bar", "bar"=>f))
 WebIO.JSString("{\"bar\":(function (array){return array.map((function (a){return (a+42)}))}),\"foo\":\"bar\"}")
 ```
 
