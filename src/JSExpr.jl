@@ -108,14 +108,10 @@ function func_expr(io, args, body)
 end
 
 function insert_return(ex)
-    if isa(ex, Symbol) || !isexpr(ex, :block)
-        Expr(:return, ex)
-    else
-        isexpr(ex.args[end], :return) && return ex
-        ex1 = copy(ex)
-        ex1.args[end] = insert_return(ex.args[end])
-        ex1
-    end
+  isexpr(ex, :block) ? :($(ex.args[1:end-1]...);$(insert_return(ex.args[end]))) :
+  isexpr(ex, :if) ? Expr(:if, ex.args[1], map(x -> insert_return(x), ex.args[2:end])...) :
+  isexpr(ex, :return) ? ex :
+  :(return $ex)
 end
 
 
