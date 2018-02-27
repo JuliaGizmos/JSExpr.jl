@@ -3,7 +3,7 @@ module JSExpr
 using JSON, MacroTools, WebIO
 export JSString, @js, @js_str
 
-import WebIO: JSString
+import WebIO: JSString, JSONContext, JSEvalSerialization
 
 macro js(expr)
     :(JSString(string($(jsstring(expr)...))))
@@ -13,7 +13,9 @@ end
 
 jsexpr(x::JSString) = x.s
 jsexpr(x::Symbol) = (x==:nothing ? "null" : string(x))
-jsexpr(x) = JSON.json(x)
+jsexpr(x) = sprint(x) do io, s
+    JSON.show_json(io, JSEvalSerialization(), s)
+end
 jsexpr(x::QuoteNode) = x.value isa Symbol ? jsexpr(string(x.value)) : jsexpr(x.value)
 jsexpr(x::LineNumberNode) = nothing
 
@@ -120,33 +122,29 @@ function if_block(ex)
         if any(x -> isexpr(x, :macrocall) && x.args[1] == Symbol("@var"), ex.args)
             error("@js expression error: @var inside an if statement is not supported")
         end
-        print(io, "(")
-        block_expr(io, rmlines(ex).args, ", ")
-        print(io, ")")
+        F(["(", block_expr(rmlines(ex).args, ", "), ")"])
     else
-        jsexpr(io, ex)
+        jsexpr(ex)
     end
 end
 
 function if_expr(xs)
+    parts = []
     if length(xs) >= 2    # we have an if
-        jsexpr(xs[1])
-        print(" ? ")
-        if_block(io, xs[2])
+        append!(parts, [jsexpr(xs[1]), " ? ", if_block(xs[2])])
     end
 
     if length(xs) == 3    # Also have an else
-        print(io, " : ")
-        if_block(io, xs[3])
+        append!(parts, [" : ", if_block(xs[3])])
     else
-        print(io, " : undefined")
+        push!(parts, " : undefined")
     end
+    F(parts)
 end
 
 function for_expr(io, i, start, to, body, step = 1)
-    print(io, "for(var $i = $start; $i <= $to; $i = $i + $step){")
-    block_expr(io, body)
-    print(io, "}")
+    F(["for(var $i = $start; $i <= $to; $i = $i + $step){",
+       block_expr(body), "}"])
 end
 
 function jsexpr(x::Expr)

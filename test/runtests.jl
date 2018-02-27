@@ -8,6 +8,7 @@ using Base.Test
 end
 
 
+@testset "@js" begin
     @test @js(nothing) == js"null"
     @test @js(x) == js"x"
     @test @js(x.y) == js"x.y"
@@ -53,16 +54,17 @@ end
     @test @js(if x; y; y+1; else z; end) == js"x ? (y, (y+1)) : (z)"
     #@test_throws ErrorException @js(if b; @var x=1; x end)
 
-   #@test @js(begin
-   #    @var acc = 0
-   #    for i = 1:10
-   #        acc += 1
-   #    end
-   #end) == js"var acc=0; for(var i = 1; i <= 10; i = i + 1){acc+=1}"
+    @test @js(begin
+        @var acc = 0
+        for i = 1:10
+            acc += 1
+        end
+    end) == js"var acc=0; for(var i = 1; i <= 10; i = i + 1){acc+=1}"
 
-   #@test @js(begin
-   #    @var acc = 0
-   #    for i = 1:2:10
-   #        acc += 1
-   #    end
-   #end) == js"var acc=0; for(var i = 1; i <= 10; i = i + 2){acc+=1}"
+    @test @js(begin
+        @var acc = 0
+        for i = 1:2:10
+            acc += 1
+        end
+    end) == js"var acc=0; for(var i = 1; i <= 10; i = i + 2){acc+=1}"
+end
