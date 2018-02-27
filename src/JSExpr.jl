@@ -49,21 +49,21 @@ end
 
 function obs_set_expr(x, val)
     # empty [], special case to get value from an Observable
-    F(["WebIO.setval(", jsexpr_joined([:(jsexpr_observable(x)), val]), ")"])
+    F(["WebIO.setval(", jsexpr_joined([x, val]), ")"])
 end
 
 function jsexpr(o::WebIO.Observable)
-    if !haskey(observ_id_dict, o)
+    if !haskey(WebIO.observ_id_dict, o)
         error("No scope associated with observer being interpolated")
     end
-    _scope, name = observ_id_dict[o]
+    _scope, name = WebIO.observ_id_dict[o]
     _scope.value === nothing && error("Scope of the observable doesn't exist anymore.")
     scope = _scope.value
 
     obsobj = Dict("type" => "observable",
                   "scope" => scope.id,
                   "name" => name,
-                  "id" => obsid(o))
+                  "id" => WebIO.obsid(o))
 
     jsexpr(obsobj)
 end
