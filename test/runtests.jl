@@ -5,7 +5,7 @@ using Base.Test
 @testset "@js_str" begin
     @test js"x=y".s == "x=y"
     y = 1
-    @test js"x=$y".s == "x=\$y"
+    @test js"x=$y" == js"x=1"
 end
 
 @testset "@js" begin
