@@ -1,4 +1,5 @@
 using JSExpr
+using WebIO
 using Base.Test
 
 @testset "@js_str" begin
@@ -67,4 +68,16 @@ end
             acc += 1
         end
     end) == js"var acc=0; for(var i = 1; i <= 10; i = i + 2){acc+=1}"
+
+    @testset "observable interpolation" begin
+        w = Scope("testwidget2")
+        ob = Observable(0)
+        @test_throws ErrorException @js $ob
+
+        ob = Observable{Any}(w, "test", nothing)
+        @test @js($ob) == js"{\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"}"
+
+        @test @js($ob[]) == js"WebIO.getval({\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"})"
+        @test @js($ob[] = 1) == js"WebIO.setval({\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"},1)"
+    end
 end
