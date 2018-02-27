@@ -142,7 +142,7 @@ function if_expr(xs)
     F(parts)
 end
 
-function for_expr(io, i, start, to, body, step = 1)
+function for_expr(i, start, to, body, step = 1)
     F(["for(var $i = $start; $i <= $to; $i = $i + $step){",
        block_expr(body), "}"])
 end
@@ -151,8 +151,6 @@ function jsexpr(x::Expr)
     isexpr(x, :block) && return block_expr(rmlines(x).args)
     x = rmlines(x)
     @match x begin
-        Expr(:macrocall, :@new, :_) => (F(["new ", jsexpr(x.args[2])]))
-        Expr(:macrocall, :@var :_) => (F(["var ", jsexpr(x.args[2])]))
         d(xs__) => dict_expr(xs)
         Dict(xs__) => dict_expr(xs)
         $(Expr(:comparison, :_, :(==), :_)) => jsexpr_joined([x.args[1], x.args[3]], "==")    # 0.4
@@ -172,7 +170,7 @@ function jsexpr(x::Expr)
         a_[] => obs_get_expr(a)
         a_[i__] => ref_expr(a, i...)
         [xs__] => vect_expr(xs)
-        (@m_ xs__) => jsexpr(macroexpand(WebIO, x))
+        (@m_ xs__) => jsexpr(macroexpand(JSExpr, x))
         (for i_ = start_ : to_
             body__
         end) => for_expr(i, start, to, body)
@@ -182,11 +180,13 @@ function jsexpr(x::Expr)
         (return a__) => (F(["return ", !isempty(a) && a[1] !== nothing ? jsexpr(a...) : ""]))
         $(Expr(:quote, :_)) => jsexpr(QuoteNode(x.args[1]))
         $(Expr(:$, :_)) => :(jsexpr($(esc(x.args[1])))) # the expr gets kept around till eval
+        $(Expr(:new, :c_)) => F(["new ", jsexpr(x.args[1])])
+        $(Expr(:var, :c_)) => F(["var ", jsexpr(x.args[1])])
         _ => error("JSExpr: Unsupported `$(x.head)` expression, $x")
     end
 end
 
-macro new(x) esc(Expr(:new, x)) end
-macro var(x) esc(Expr(:var, x)) end
+macro new(x) Expr(:new, esc(x)) end
+macro var(x) Expr(:var, esc(x)) end
 
 end # module
