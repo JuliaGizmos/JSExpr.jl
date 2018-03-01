@@ -1,7 +1,7 @@
 module JSExpr
 
 using JSON, MacroTools, WebIO
-export JSString, @js, @js_str
+export JSString, @js, @js_str, @var, @new
 
 import WebIO: JSString, JSONContext, JSEvalSerialization
 
