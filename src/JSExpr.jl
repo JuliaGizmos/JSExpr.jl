@@ -1,7 +1,7 @@
 module JSExpr
 
 using JSON, MacroTools, WebIO
-export JSString, @js, @js_str
+export JSString, @js, @js_str, @var, @new
 
 import WebIO: JSString, JSONContext, JSEvalSerialization
 
@@ -174,7 +174,7 @@ function jsexpr(x::Expr)
         a_[] => obs_get_expr(a)
         a_[i__] => ref_expr(a, i...)
         [xs__] => vect_expr(xs)
-        (@m_ xs__) => jsexpr(macroexpand(JSExpr, x))
+        (@m_ xs__) => jsexpr(macroexpand(current_module(), x))
         (for i_ = start_ : to_
             body__
         end) => for_expr(i, start, to, body)
