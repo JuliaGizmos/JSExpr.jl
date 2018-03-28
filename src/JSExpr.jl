@@ -183,11 +183,19 @@ function jsexpr(x::Expr)
         end) => for_expr(i, start, to, body, step)
         (return a__) => (F(["return ", !isempty(a) && a[1] !== nothing ? jsexpr(a...) : ""]))
         $(Expr(:quote, :_)) => jsexpr(QuoteNode(x.args[1]))
-        $(Expr(:$, :_)) => :(jsexpr($(esc(x.args[1])))) # the expr gets kept around till eval
+        $(Expr(:$, :_)) => inter(x.args[1])
         $(Expr(:new, :c_)) => F(["new ", jsexpr(x.args[1])])
         $(Expr(:var, :c_)) => F(["var ", jsexpr(x.args[1])])
         _ => error("JSExpr: Unsupported `$(x.head)` expression, $x")
     end
+end
+
+function inter(x)
+    if x isa Expr && x.args[1] isa Expr
+        x.args[1].head == :...
+        return :(join(map(jsexpr, $(esc(x.args[1].args[1]))), ","))
+    end
+    :(jsexpr($(esc(x)))) # the expr gets kept around till eval
 end
 
 macro new(x) Expr(:new, esc(x)) end
