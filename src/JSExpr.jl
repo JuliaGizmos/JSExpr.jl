@@ -176,7 +176,7 @@ function jsexpr(x::Expr)
         a_[] => obs_get_expr(a)
         a_[i__] => ref_expr(a, i...)
         [xs__] => vect_expr(xs)
-        (@m_ xs__) => jsexpr(macroexpand(current_module(), x))
+        (@m_ xs__) => jsexpr(macroexpand(JSExpr, x))
         (for i_ = start_ : to_
             body__
         end) => for_expr(i, start, to, body)

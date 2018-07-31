@@ -81,3 +81,17 @@ end
         @test @js($ob[] = 1) == js"WebIO.setval({\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"},1)"
     end
 end
+
+# https://github.com/JuliaGizmos/JSExpr.jl/issues/13
+module OuterWrapper
+    module InnerWrapper
+        import JSExpr: jsexpr
+        f() = jsexpr(:(@new(1)))
+    end
+
+    using Base.Test
+    @testset "Issue 13" begin
+        InnerWrapper.f()
+    end
+end
+
