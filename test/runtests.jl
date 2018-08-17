@@ -1,6 +1,6 @@
 using JSExpr
 using WebIO
-using Base.Test
+using Test
 
 @testset "@js_str" begin
     @test js"x=y".s == "x=y"
