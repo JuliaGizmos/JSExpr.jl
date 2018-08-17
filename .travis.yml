@@ -15,7 +15,8 @@ notifications:
 matrix:
  allow_failures:
  - julia: nightly
-
+before_script:
+  - julia -e 'using Pkg; Pkg.add("WebIO#master")'
 after_success:
   # push coverage results to Coveralls
   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder())'
