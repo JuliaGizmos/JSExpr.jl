@@ -1,4 +1,4 @@
 julia 0.7
 JSON
 MacroTools
-WebIO
+WebIO 0.3.0
