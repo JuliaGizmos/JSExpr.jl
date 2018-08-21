@@ -6,6 +6,7 @@ using JSON, MacroTools, WebIO
 export JSString, @js, @js_str, @var, @new
 
 import WebIO: JSString, JSONContext, JSEvalSerialization
+using Observables: AbstractObservable
 
 macro js(expr)
     :(JSString(string($(jsstring(expr)...))))
@@ -54,7 +55,7 @@ function obs_set_expr(x, val)
     F(["WebIO.setval(", jsexpr_joined([x, val]), ")"])
 end
 
-function jsexpr(o::WebIO.Observable)
+function jsexpr(o::AbstractObservable)
     if !haskey(WebIO.observ_id_dict, o)
         error("No scope associated with observer being interpolated")
     end
