@@ -108,7 +108,9 @@ end
 function dict_expr(xs)
     parts = []
     xs = map(xs) do x
-        if x.head == :(=) || x.head == :kw
+        if !isa(x, Expr)
+            error("Invalid pair separator in dict expression")
+        elseif x.head == :(=) || x.head == :kw
             push!(parts, F([jsexpr(x.args[1]), ":", jsexpr(x.args[2])]))
         elseif x.head == :call && x.args[1] == :(=>)
             push!(parts, F([jsexpr(x.args[2]), ":", jsexpr(x.args[3])]))
@@ -189,6 +191,7 @@ function jsexpr(x::Expr)
         $(Expr(:$, :_)) => inter(x.args[1])
         $(Expr(:new, :c_)) => F(["new ", jsexpr(x.args[1])])
         $(Expr(:var, :c_)) => F(["var ", jsexpr(x.args[1])])
+        $(Expr(:tuple, :__)) => dict_expr(x.args)
         _ => error("JSExpr: Unsupported `$(x.head)` expression, $x")
     end
 end
