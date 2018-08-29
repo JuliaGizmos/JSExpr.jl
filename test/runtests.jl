@@ -28,6 +28,7 @@ end
 
 
     @test @js(d(x=1)) == js"{x:1}" # special dict syntax
+    @test @js((x=1,)) == js"{x:1}" # named tuple syntax
     @test @js(d("x\"y"=1)) == JSString("{\"x\\\"y\":1}")
     @test @js([1, "xyz"]) == js"[1,\"xyz\"]"
 
