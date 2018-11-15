@@ -47,12 +47,12 @@ end
 
 function obs_get_expr(x)
     # empty [], special case to get value from an Observable
-    F(["WebIO.getval(", jsexpr(x), ")"])
+    F(["_webIOScope.getObservableValue(", jsexpr(x), ")"])
 end
 
 function obs_set_expr(x, val)
     # empty [], special case to get value from an Observable
-    F(["WebIO.setval(", jsexpr_joined([x, val]), ")"])
+    F(["_webIOScope.setObservableValue(", jsexpr_joined([x, val]), ")"])
 end
 
 function jsexpr(o::AbstractObservable)
