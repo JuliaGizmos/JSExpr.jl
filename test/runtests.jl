@@ -77,7 +77,7 @@ end
         ob = Observable{Any}(w, "test", nothing)
         @test @js($ob) == js"{\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"}"
 
-        @test @js($ob[]) == js"_webIOScope.getObservableValue({\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"})"
-        @test @js($ob[] = 1) == js"_webIOScope.setObservableValue({\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"},1)"
+        @test @js($ob[]) == js"WebIO.getval({\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"})"
+        @test @js($ob[] = 1) == js"WebIO.setval({\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"},1)"
     end
 end
