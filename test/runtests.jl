@@ -2,12 +2,9 @@ using JSExpr
 using WebIO
 using Test
 
-@testset "@js_str" begin
-    @test js"x=y".s == "x=y"
-    y = 1
-    @test js"x=$y" == js"x=1"
-end
+include("./test-jsexpr2.jl")
 
+if false
 @testset "@js" begin
     @test @js(nothing) == js"null"
     @test @js(x) == js"x"
@@ -80,4 +77,5 @@ end
         @test @js($ob[]) == js"WebIO.getval({\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"})"
         @test @js($ob[] = 1) == js"WebIO.setval({\"name\":\"test\",\"scope\":\"testwidget2\",\"id\":\"ob_02\",\"type\":\"observable\"},1)"
     end
+end
 end
