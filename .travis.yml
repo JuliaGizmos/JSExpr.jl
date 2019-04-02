@@ -17,7 +17,7 @@ matrix:
  - julia: nightly
 
 before_install:
-  - julia -e 'using Pkg; Pkg.add(PackageSpec("WebIO", rev="master"))'
+  - julia -e 'using Pkg; Pkg.add(PackageSpec(name="WebIO", rev="master"))'
 
 after_success:
   # push coverage results to Coveralls
