@@ -1,12 +1,15 @@
 # Allow override-able parsing of calls
-function crawl(h::Val{:call}, m::Symbol, b...)::JSNode
+crawl(h::Val{:call}, m::Symbol, b...) = crawl(h, Val(m), b...)
 
-    # Check for overrides
-    if hasmethod(crawl, typeof((Val(:call), Val(m), b...)))
-        return crawl(Val(:call), Val(m), b...)::JSNode
+# Default for generic methods
+crawl(::Val{:call}, ::Val{M}, args...) where {M} = :(
+    JSAST(
+        :call,
+        $(crawl(M)),
+        $(crawl.(args)...)
+    )
+)
 
-    # Otherwise pass as a call
-    else
-        return JSAST(:call, [crawl(m), crawl.(b)...])
-    end
+function deparse(::Val{:call}, m, args...)
+    jsstring(deparse(m), "(", join(deparse.(args), ", "), ")")
 end
