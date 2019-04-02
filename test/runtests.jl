@@ -3,6 +3,7 @@ using WebIO
 using Test
 
 include("./test-jsexpr2.jl")
+include("./infix.jl")
 
 # if false
 # @testset "@js" begin

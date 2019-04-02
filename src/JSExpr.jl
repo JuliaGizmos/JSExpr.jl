@@ -71,9 +71,6 @@ function deparse(::Val{H}, args...) where {H}
     error("JSAST expression type ($(QuoteNode(H))) cannot be deparsed.")
 end
 
-include("./literals.jl")
-include("./infix.jl")
-
 """
     @js(ex)
 
@@ -118,7 +115,9 @@ function crawl(ex::T) where {T}
     end
 end
 
+include("./literals.jl")
 include("./call.jl")
+include("./infix.jl")
 include("./macrocall.jl")
 include("./objects.jl")
 include("./arrays.jl")
