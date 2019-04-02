@@ -1,5 +1,5 @@
 julia 0.7
 JSON
 MacroTools
-WebIO#master
+WebIO
 Observables 0.2.2

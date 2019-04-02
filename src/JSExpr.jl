@@ -53,16 +53,20 @@ end
 """
     deparse(jsnode)
 
-The expectation is that each dispatched deparse function returns a bare JSString
-literal, formed by appropriate ordering and concatenation of the output of
-recursive calls to the deparse-function.
-
 Convert a `JSNode` to `JSString`.
 """
 function deparse(ex::JSAST)::JSString
     deparse(Val(ex.head), ex.args...)::JSString
 end
 
+"""
+    deparse(Val(head), args...)
+
+Transform a JSAST with the specified `head` and `args` into a `JSString`.
+The expectation is that each dispatched deparse function returns a bare
+`JSString` literal, formed by appropriate ordering and concatenation of the
+output of recursive calls to the `deparse` function.
+"""
 function deparse(::Val{H}, args...) where {H}
     # This should only happen if there is an asymmetry between crawl and
     # deparse; for example, if crawl is implemented but deparse was forgotten,
@@ -95,25 +99,7 @@ end
 crawl(ex::QuoteNode) = crawl(ex.value)
 
 # All other terminals
-function crawl(ex::T) where {T}
-
-    # Push terminals that have native symbol methods, maybe unsafe
-    if hasmethod(JSTerminal, Tuple{T})
-        return :(JSTerminal($(esc(ex))))
-
-    # Push terminals, when all else fails try interpolation. This will be a source of bugs
-    # because there are no guarantees the string representation will be sensible.
-    elseif hasmethod(string, Tuple{T})
-        return :(JSTerminal(JSString(string($(esc(ex))))))
-
-    # Bail and explain
-    else
-        error(
-            "The type $T cannot be a terminal node because " *
-            "neither a string method nor a Symbol method were found."
-        )
-    end
-end
+crawl(ex::T) where {T} = :(JSTerminal($(esc(ex))))
 
 include("./literals.jl")
 include("./call.jl")
