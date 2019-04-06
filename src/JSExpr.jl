@@ -97,6 +97,7 @@ end
 
 # I'm pretty sure QuoteNodes can be safely ignored.
 crawl(ex::QuoteNode) = crawl(ex.value)
+crawl(::LineNumberNode) = :(nothing)
 
 # All other terminals
 crawl(ex::T) where {T} = :(JSTerminal($(esc(ex))))
@@ -109,5 +110,7 @@ include("./objects.jl")
 include("./arrays.jl")
 include("./jskeywords.jl")
 include("./interpolation.jl")
+include("./function.jl")
+include("./compat.jl")
 
 end

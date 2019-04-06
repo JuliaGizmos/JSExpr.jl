@@ -26,7 +26,7 @@ struct JSAST <: JSNode
 end
 
 JSAST(h) = JSAST(h, [])
-JSAST(h, body::JSNode...) = JSAST(h, [body...])
+JSAST(h, body::Union{JSNode, Nothing}...) = JSAST(h, [b for b in body if nothing !== b])
 
 # Custom show methods to make printing look less noisy.
 Base.show(io:: IO, m::MIME"text/plain", t::JSTerminal) = print(io, "JSTerminal($(t.s.s))")

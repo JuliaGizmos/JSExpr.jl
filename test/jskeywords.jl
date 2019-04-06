@@ -2,7 +2,7 @@ using Test
 using JSExpr
 using JSExpr: @crawl, deparse, JSTerminal, JSString
 
-@testset "JavaScript keywords" begin
+@testset "reserved keywords" begin
     @testset "new keyword without arguments" begin
         jsast = @crawl @new Bar
         @test jsast.head == :new

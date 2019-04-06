@@ -4,6 +4,10 @@ using Test
 
 include("./test-jsexpr2.jl")
 include("./infix.jl")
+include("./interpolation.jl")
+include("./call.jl")
+include("./function.jl")
+include("./jskeywords.jl")
 
 # if false
 # @testset "@js" begin
