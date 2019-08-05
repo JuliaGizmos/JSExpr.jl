@@ -10,5 +10,5 @@ WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
 
 [compat]
 Observables = "≥ 0.2.2"
-WebIO = "≥ 0.7.0"
-julia = "≥ 0.7.0"
+WebIO = "0.7"
+julia = "0.7, 1"
