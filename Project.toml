@@ -11,8 +11,8 @@ WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
 
 [compat]
 julia = "0.7, 1"
-Observables = ">= 0.2.2"
-WebIO = ">= 0.8.5"
+Observables = "0.2.2"
+WebIO = "0.8.5"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
