@@ -5,7 +5,7 @@ module JSExpr
 using JSON, MacroTools, WebIO
 export JSString, @js, @js_str, @var, @new
 
-import WebIO: JSString, JSONContext, JSEvalSerialization
+import WebIO: JSString, JSONContext, JSEvalSerialization, scopeid
 using Observables: AbstractObservable
 
 macro js(expr)
@@ -64,7 +64,7 @@ function jsexpr(o::AbstractObservable)
     scope = _scope.value
 
     obsobj = Dict("type" => "observable",
-                  "scope" => scope.id,
+                  "scope" => scopeid(scope),
                   "name" => name,
                   "id" => WebIO.obsid(o))
 

@@ -1,0 +1,21 @@
+name = "JSExpr"
+uuid = "97c1335a-c9c5-57fe-bc5d-ec35cebe8660"
+license = "MIT"
+version = "0.5.1"
+
+[deps]
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+Observables = "510215fc-4207-5dde-b226-833fc4488ee2"
+WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
+
+[compat]
+julia = "0.7, 1"
+Observables = "0.2.2"
+WebIO = "0.8.5"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
