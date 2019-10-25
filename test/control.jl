@@ -37,4 +37,12 @@ using JSExpr: @crawl, deparse, JSTerminal, JSString
         ) == JSString("while (foo) { if (bar) { continue; }; break; }");
     end
 
+    @testset "for expressions" begin
+        @test @js(
+            for i in myiterable
+                console.log(i)
+            end
+        ) == JSString("for (let i of myiterable) { console.log(i); }")
+    end
+
 end

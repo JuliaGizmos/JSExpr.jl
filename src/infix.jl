@@ -22,7 +22,7 @@ end
 
 # Take care of infix operators that are translated to calls in the Julia AST
 # (We need to translate them back into infix operators for the JSAST).
-for infix in (:+, :-, :*, :/)
+for infix in (:+, :-, :*, :/, :in, :of)
     sym = QuoteNode(infix)
     @eval begin
         crawl(::Val{:call}, ::Val{$sym}, lhs, rhs) = Expr(
