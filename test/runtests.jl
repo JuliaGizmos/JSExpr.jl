@@ -10,6 +10,7 @@ include("./function.jl")
 include("./jskeywords.jl")
 include("./arrays.jl")
 include("./control.jl")
+include("./juliaisms.jl")
 
 # if false
 # @testset "@js" begin

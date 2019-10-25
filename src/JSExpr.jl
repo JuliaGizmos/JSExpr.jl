@@ -111,6 +111,7 @@ include("./arrays.jl")
 include("./jskeywords.jl")
 include("./interpolation.jl")
 include("./function.jl")
+include("./juliaisms.jl")
 include("./compat.jl")
 
 end
