@@ -1,15 +1,15 @@
 # Arrays
-function crawl(h::Val{:vect}, b...)
+function crawl(::Val{:vect}, b...)
     return :(JSAST(:array, $(crawl.(b)...)))
 end
-function deparse(h::Val{:array}, b::JSNode...)::JSString
+function deparse(::Val{:array}, b::JSNode...)::JSString
     return jsstring("[", join(deparse.(b), ","), "]")
 end
 
 # Tuples
 # TODO: We could extend this syntax to support NamedTuples and convert them to
 # objects in JavaScript.
-function crawl(h::Val{:tuple}, items...)
+function crawl(::Val{:tuple}, items...)
     return :(JSAST(:array, $(crawl_tuple_arg.(items)...)))
 end
 

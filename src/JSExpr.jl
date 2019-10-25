@@ -103,6 +103,7 @@ crawl(::LineNumberNode) = :(nothing)
 crawl(ex::T) where {T} = :(JSTerminal($(esc(ex))))
 
 include("./literals.jl")
+include("./control.jl")
 include("./call.jl")
 include("./infix.jl")
 include("./macrocall.jl")

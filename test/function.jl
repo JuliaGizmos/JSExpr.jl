@@ -22,9 +22,9 @@ using JSExpr: @crawl, deparse, JSTerminal, JSString
 
     @testset "anonymous arrow function" begin
         jsstr = @js x -> x + 3
-        @test jsstr == JSString("function (x) { return x + 3; }")
+        @test jsstr == JSString("(x) => { return x + 3; }")
 
         jsstr = @js (x, y) -> x + y
-        @test jsstr == JSString("function (x, y) { return x + y; }")
+        @test jsstr == JSString("(x, y) => { return x + y; }")
     end
 end

@@ -9,6 +9,7 @@ include("./call.jl")
 include("./function.jl")
 include("./jskeywords.jl")
 include("./arrays.jl")
+include("./control.jl")
 
 # if false
 # @testset "@js" begin

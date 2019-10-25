@@ -5,50 +5,78 @@ crawl(h::Val{:function}, signature, body) = :(
         $(crawl(body)),
     )
 )
-deparse(h::Val{:function}, signature, body) = jsstring(
-    "function ", deparse(signature), " ", deparse(body),
-)
+function deparse(::Val{:function}, signature, body)
+    return jsstring(
+        "function ", deparse(signature), " ",
+        deparse_returnify_block(body),
+    )
+end
 
-crawl(h::Val{:(->)}, arguments, body) = :(
-    JSAST(
-        :function,
+# NOTE: We need to treat arrow functions differently than normal functions
+# because of the way `this` binding works in JS using arrow functions (i.e.,
+# its invalid to transform () -> ... into JavaScript that uses the function
+# keyword instead of the => JavaScript syntax).
+function crawl(::Val{:(->)}, arguments, body)
+    return :(JSAST(
+        :arrowfunction,
         $(arrowarguments2call(arguments)),
         $(crawl(body)),
+    ))
+end
+function deparse(::Val{:arrowfunction}, signature, body)
+    return jsstring(
+        deparse(signature), " => ",
+        deparse_returnify_block(body),
     )
-)
+end
 
-crawl(h::Val{:return}, ex) = :(
-    JSAST(
+function crawl(h::Val{:return}, ex)
+    return :(JSAST(
         :return,
         $(crawl(ex)),
-    )
-)
-deparse(h::Val{:return}, ex) = jsstring(
-    "return ", deparse(ex)
-)
+    ))
+end
+function deparse(h::Val{:return}, ex)
+    return jsstring("return ", deparse(ex))
+end
 
-crawl(::Val{:block}, body...) = :(
-    JSAST(
+function crawl(::Val{:block}, body...)
+    return :(JSAST(
         :block,
         $(crawl.(body)...),
-    )
-)
+    ))
+end
+function deparse(::Val{:block}, body...)
+    if length(body) == 0
+        error(
+            "Invalid JS block expression: " *
+            "must contain at least one statement."
+        )
+    end
+    return jsstring("{ ", join(deparse.(body), "; "), "; }")
+end
 
-deparse(::Val{:block}) = error("Block expression must be nonempty.")
-deparse(::Val{:block}, body...) = jsstring(
-    "{ ",
-    join(deparse.([
-        body[1:length(body)-1]...
-        returnify(last(body))
-    ]), "; "),
-    "; }"
-)
-
-function returnify(statement::JSNode)
+function returnify_js_statement(statement::JSNode)
     if isa(statement, JSAST) && statement.head == :return
         return statement
     end
     return JSAST(:return, statement)
+end
+
+"""
+Deparse a block, transforming its final statement into a return statement.
+
+This ensures that Julia semantics wherein the last expression is implicitly the
+return value is translated to the generated JavaScript code (as is necessary
+for arrow functions to work as expected).
+"""
+function deparse_returnify_block(block::JSNode)
+    if !(isa(block, JSAST) && block.head == :block)
+        @show block
+        error("Argument to returnify_block must be a JSAST(:block, ...).")
+    end
+    block.args[end] = returnify_js_statement(block.args[end])
+    return deparse(block)
 end
 
 """
