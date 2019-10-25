@@ -20,4 +20,21 @@ using JSExpr: @crawl, deparse, JSTerminal, JSString
         ) == JSString("if (foo) { bar(); } else { spam(); }")
     end
 
+    @testset "while expressions" begin
+        @test @js(
+            while true
+                foo()
+            end
+        ) == JSString("while (true) { foo(); }")
+
+        @test @js(
+            while foo
+                if (bar)
+                    continue
+                end
+                break
+            end
+        ) == JSString("while (foo) { if (bar) { continue; }; break; }");
+    end
+
 end
