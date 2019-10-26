@@ -10,4 +10,13 @@ using Observables, WebIO
         @test startswith(expr_str, "WebIO.getval({")
         @test occursin("\"id\":\"$(WebIO.obsid(obs))\"", expr_str)
     end
+
+    @testset "update observables" begin
+        s = Scope()
+        obs = Observable(s, "obs", "foo")
+        expr_str = string(@js($obs[] = "bar"))
+        @test startswith(expr_str, "WebIO.setval({")
+        @test occursin("\"id\":\"$(WebIO.obsid(obs))\"", expr_str)
+        @test endswith(expr_str, ", \"bar\")")
+    end
 end
