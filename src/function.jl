@@ -8,7 +8,7 @@ crawl(h::Val{:function}, signature, body) = :(
 function deparse(::Val{:function}, signature, body)
     return jsstring(
         "function ", deparse(signature), " ",
-        deparse_returnify_block(body),
+        deparse(body),
     )
 end
 
@@ -57,7 +57,24 @@ function deparse(::Val{:block}, body...)
 end
 
 function returnify_js_statement(statement::JSNode)
-    if isa(statement, JSAST) && statement.head == :return
+    if !isa(statement, JSAST)
+        return JSAST(:return, statement)
+    end
+
+    head = statement.head
+    if head == :return
+        return statement
+    elseif head == :if
+        statement.args[2] = returnify_js_statement(statement.args[2])
+        if length(statement.args) > 2
+            statement.args[3] = returnify_js_statement(statement.args[3])
+        end
+        return statement
+    elseif head == :block
+        statement.args[end] = returnify_js_statement(statement.args[end])
+        return statement
+    elseif in(head, (:while, :for))
+        # We give up trying to add implicit returns if it's "too hard".
         return statement
     end
     return JSAST(:return, statement)

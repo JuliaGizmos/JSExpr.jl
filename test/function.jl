@@ -4,26 +4,16 @@ using JSExpr: @crawl, deparse, JSTerminal, JSString
 
 @testset "function" begin
 
-    @testset "function with explicit return" begin
-        jsstr = @js function add(x, y)
+    @testset "function return" begin
+        @test string(@js function add(x, y)
             return x + y
-        end
-
-        @test jsstr == JSString("function add(x, y) { return x + y; }")
-    end
-
-    @testset "function with implicit return" begin
-        jsstr = @js function add(x, y)
-            x + y
-        end
-
-        @test jsstr == JSString("function add(x, y) { return x + y; }")
+        end) == "function add(x, y) { return x + y; }"
     end
 
     @testset "anonymous function-keyword function" begin
         @test string(@js(
-            function (x, y) x + y end
-        )) == "function (x,y) { return x + y; }"
+            function (x, y) console.log(x + y) end
+        )) == "function (x,y) { console.log(x + y); }"
     end
 
     @testset "anonymous arrow function" begin
@@ -32,5 +22,15 @@ using JSExpr: @crawl, deparse, JSTerminal, JSString
 
         jsstr = @js (x, y) -> x + y
         @test jsstr == JSString("(x, y) => { return x + y; }")
+    end
+
+    @testset "automatic return insertion" begin
+        @test string(@js(
+            (x, y) -> if x > y
+                x
+            else
+                y
+            end
+        )) == "(x, y) => { if (x > y) { return x; } else { return y; }; }"
     end
 end
