@@ -12,6 +12,8 @@ include("./arrays.jl")
 include("./control.jl")
 include("./juliaisms.jl")
 
+include("./webio.jl")
+
 # if false
 # @testset "@js" begin
 #     @test @js(nothing) == js"null"

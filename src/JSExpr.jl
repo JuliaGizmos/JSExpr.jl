@@ -5,7 +5,10 @@ module JSExpr
 # the direction of the dependencies.
 export @js, @js_str
 
+using WebIO
 using WebIO: JSString, @js_str, tojs
+using Observables
+using Observables: AbstractObservable
 
 JSString(s::JSString) = s # Definitely move this into WebIO.
 jsstring(xs::JSString...) = JSString(string([x.s for x in xs]...))
@@ -111,7 +114,10 @@ include("./arrays.jl")
 include("./jskeywords.jl")
 include("./interpolation.jl")
 include("./function.jl")
+include("./ref.jl")
 include("./juliaisms.jl")
 include("./compat.jl")
+
+include("./webio.jl")
 
 end
