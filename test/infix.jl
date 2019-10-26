@@ -14,6 +14,10 @@ using JSExpr: @crawl, deparse, JSTerminal
         @test jsstr == js"foo + bar"
     end
 
+    @testset "string concatenation infix operator" begin
+        @test string(@js(key + " => " + value)) == "key + \" => \" + value"
+    end
+
     @testset "subtraction infix operator" begin
         jsast = @crawl(foo - bar)
         @test jsast.head == :(-)
@@ -45,6 +49,10 @@ using JSExpr: @crawl, deparse, JSTerminal
 
         jsstr = deparse(jsast)
         @test jsstr == js"foo / bar"
+    end
+
+    @testset "associativity of infix operators" begin
+        @test string(@js(5 * (1 + 2))) == "5 * (1 + 2)"
     end
 end
 
@@ -123,5 +131,16 @@ end
 
     @testset "not-equality infix operator" begin
         @test @js(foo != bar) == JSString("foo != bar")
+    end
+end
+
+@testset "logical infix operators" begin
+    @testset "&&" begin
+        @test string(@js foo && bar) == "foo && bar"
+        @test string(@js foo && bar && spam) == "foo && bar && spam"
+    end
+
+    @testset "logical infix associativity" begin
+        @test string(@js foo && (bar || spam)) == "foo && (bar || spam)"
     end
 end
