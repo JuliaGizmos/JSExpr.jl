@@ -1,5 +1,6 @@
 using JSExpr
 using WebIO
+import WebIO: scopeid
 using Test
 
 include("./test-jsexpr2.jl")
