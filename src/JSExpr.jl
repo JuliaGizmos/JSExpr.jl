@@ -95,12 +95,21 @@ This is useful for making assertions about the generated AST structure, which
 is in turn useful for testing, but most users should just use `@js`.
 """
 macro crawl(ex)
-    crawl(ex)
+    return crawl(ex)
 end
 
-# I'm pretty sure QuoteNodes can be safely ignored.
-crawl(ex::QuoteNode) = crawl(ex.value)
 crawl(::LineNumberNode) = :(nothing)
+
+# For QuoteNode's, if they wrap symbols (and they usually do), we implicitly
+# convert them into strings. This is what we want in a lot of places, but there
+# are a few places where we need to be careful about this (namely, while
+# translating dot expressions).
+function crawl(node::QuoteNode)
+    if isa(node.value, Symbol)
+        return crawl(string(node.value))
+    end
+    return crawl(node.value)
+end
 
 # All other terminals
 crawl(ex::T) where {T} = :(JSTerminal($(esc(ex))))

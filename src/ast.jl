@@ -38,3 +38,6 @@ function Base.show(io:: IO, m::MIME"text/plain", t::JSAST)
     end
     print(io, ")")
 end
+
+_unquote(x) = x
+_unquote(x::QuoteNode) = _unquote(x.value)

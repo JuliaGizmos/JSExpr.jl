@@ -63,7 +63,9 @@ for infix in (
 end
 
 function crawl(h::Val{:(.)}, lhs, rhs)
-    return :(JSAST(:(.), $(crawl(lhs)), $(crawl(rhs))))
+    # We unquote the RHS because of the way that Julia adds QuoteNode's to dot
+    # expression.
+    return :(JSAST(:(.), $(crawl(lhs)), $(crawl(_unquote(rhs)))))
 end
 function deparse(h::Val{:(.)}, lhs, rhs)
     return js"$(deparse(lhs)).$(deparse(rhs))"
