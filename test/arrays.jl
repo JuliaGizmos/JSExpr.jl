@@ -12,4 +12,8 @@ using JSExpr: @crawl, deparse, JSTerminal, JSString
         )
 
         @test @js([[], []]) == JSString("""[[],[]]""")
+
+        @testset "array indexing" begin
+            @test @js([1, 2, 3][0]) == JSString("[1,2,3][0]")
+        end
 end
