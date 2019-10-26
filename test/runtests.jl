@@ -9,6 +9,7 @@ include("./call.jl")
 include("./function.jl")
 include("./jskeywords.jl")
 include("./arrays.jl")
+include("./objects.jl")
 include("./control.jl")
 include("./juliaisms.jl")
 
