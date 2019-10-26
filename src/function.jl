@@ -6,10 +6,16 @@ crawl(h::Val{:function}, signature, body) = :(
     )
 )
 function deparse(::Val{:function}, signature, body)
-    return jsstring(
+    body = jsstring(
         "function ", deparse(signature), " ",
         deparse(body),
     )
+    # We need to wrap anonymous functions in parens (otherwise, it's a syntax
+    # error in JavaScript).
+    if signature.head == :tuple
+        return jsstring("(", body, ")")
+    end
+    return body
 end
 
 # NOTE: We need to treat arrow functions differently than normal functions
