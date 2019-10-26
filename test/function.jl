@@ -20,6 +20,12 @@ using JSExpr: @crawl, deparse, JSTerminal, JSString
         @test jsstr == JSString("function add(x, y) { return x + y; }")
     end
 
+    @testset "anonymous function-keyword function" begin
+        @test string(@js(
+            function (x, y) x + y end
+        )) == "function (x,y) { return x + y; }"
+    end
+
     @testset "anonymous arrow function" begin
         jsstr = @js x -> x + 3
         @test jsstr == JSString("(x) => { return x + 3; }")

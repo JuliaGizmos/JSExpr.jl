@@ -116,4 +116,12 @@ end
         jsstr = deparse(jsast)
         @test jsstr == js"foo /= bar"
     end
+
+    @testset "equality infix operator" begin
+        @test @js(foo == bar) == JSString("foo == bar")
+    end
+
+    @testset "not-equality infix operator" begin
+        @test @js(foo != bar) == JSString("foo != bar")
+    end
 end

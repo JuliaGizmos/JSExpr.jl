@@ -30,7 +30,7 @@ end
 # These infix operators are represented as function calls in Julia's AST and so
 # we need to crawl them as part of the `crawl_call` process and deparse them
 # into the appropriate infix for JavaScript.
-for infix in (:+, :-, :*, :/, :in, :of)
+for infix in (:+, :-, :*, :/, :in, :of, :(==), :(!=), :(===), :(!==))
     sym = QuoteNode(infix)
     @eval begin
         function crawl_call(::Val{$sym}, lhs, rhs)
