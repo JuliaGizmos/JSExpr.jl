@@ -3,6 +3,15 @@
 # Most of the infixes are omitted since JavaScript doesn't allow arbitrary
 # unicode identifiers and/or the respective infixes don't exist in JavaScript.
 
+# TODO:
+# It would make sense (and might make things a bit easier/cleaner) to map infix
+# and unary expressions into JSAST's with :infixop and :unaryop heads
+# respectively.
+# This means that 1 + 2 would become (:infixop, :+, 1, 2) instead of (:+, 1, 2).
+# We would only need to have one deparse method for all infixes, and this allows
+# us to disambiguate unary from infix at the JSAST level (instead of checking if
+# length(jsast.args) > 1).
+
 """
     _isinfix(arg[, exclude_infix])
 
@@ -10,12 +19,20 @@ Returns true if arg is an infix symbol or infix JSNode unless it matches the
 symbol provided for exclude.
 """
 function _isinfix end
+
+# _isinfix(::Symbol)
 _isinfix(s::Symbol, x::Union{Symbol, Nothing}=nothing) = _isinfix(Val(s), x)
-_isinfix(::JSNode, x::Union{Symbol, Nothing}=nothing) = false
-_isinfix(j::JSAST, x::Union{Symbol, Nothing}=nothing) = _isinfix(j.head, x)
 _isinfix(::Val{S}) where {S} = false
 function _isinfix(val::Val{S}, x::Union{Symbol, Nothing}) where {S}
     return S != x && _isinfix(val)
+end
+
+# _isinfix(::JSNode)
+_isinfix(::JSNode, x::Union{Symbol, Nothing}=nothing) = false
+function _isinfix(j::JSAST, x::Union{Symbol, Nothing}=nothing)
+    # We check j.args > 1 here to avoid redundant parenthesization around unary
+    # operators. See TODO comment at start of this file.
+    return _isinfix(j.head, x) && length(j.args) > 1
 end
 
 """
@@ -88,17 +105,45 @@ for infix in (
     sym = QuoteNode(infix)
     @eval begin
         _isinfix(::Val{$sym}) = true
-        function crawl_call(::Val{$sym}, args...)
+        function crawl_call(::Val{$sym}, arg1, arg2, args...)
             return Expr(
                 :call,
                 :JSAST,
                 QuoteNode($sym),
-                crawl.(args)...,
+                crawl.([arg1, arg2, args...])...,
             )
         end
-        function deparse(::Val{$sym}, args...)
+        function deparse(::Val{$sym}, arg1, arg2, args...)
             return jsstring(
-                join(_deparse_infix_arg.(args), string(" ", $sym, " "))
+                join(
+                    _deparse_infix_arg.([arg1, arg2, args...]),
+                    string(" ", $sym, " "),
+                )
+            )
+        end
+    end
+end
+
+# Unary operators
+for unary in (
+        :+, :-,
+)
+    sym = QuoteNode(unary)
+    @eval begin
+        function crawl_call(::Val{$sym}, arg)
+            return Expr(
+                :call,
+                :JSAST,
+                QuoteNode($sym),
+                crawl(arg),
+            )
+        end
+        function deparse(::Val{$sym}, arg)
+            return jsstring(
+                string($sym),
+                _isinfix(arg)
+                    ? string("(", deparse(arg), ")")
+                    : deparse(arg)
             )
         end
     end

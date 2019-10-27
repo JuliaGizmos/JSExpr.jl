@@ -56,6 +56,14 @@ using JSExpr: @crawl, deparse, JSTerminal
     end
 end
 
+@testset "unary infix operators" begin
+    @test @js(-123) == js"-123"
+    @test @js(-foo) == js"-foo"
+    @test @js(+@new Date) == js"+new Date"
+    @test @js(-foo + bar) == js"-foo + bar"
+    @test @js(-(foo + bar)) == js"-(foo + bar)"
+end
+
 @testset "object infix operators" begin
     @testset "dot infix operator" begin
         jsast = @crawl(foo.bar)
