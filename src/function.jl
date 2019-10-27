@@ -1,7 +1,7 @@
 crawl(h::Val{:function}, signature, body) = :(
     JSAST(
         :function,
-        $(crawl(signature)),
+        $(_crawl_function_signature(signature)),
         $(crawl(body)),
     )
 )
@@ -12,10 +12,34 @@ function deparse(::Val{:function}, signature, body)
     )
     # We need to wrap anonymous functions in parens (otherwise, it's a syntax
     # error in JavaScript).
-    if signature.head == :tuple
+    if signature.args[1] == JSTerminal(Symbol(""))
         return jsstring("(", body, ")")
     end
     return body
+end
+
+"""
+Crawl the signature of a function.
+
+In JS,
+```js
+function (...args) { /* ... */ }
+```
+is valid syntax, but in Julia, since there's no function name, the function
+signature gets parsed as a `:tuple` instead of a `:call`. Since we convert
+tuples to arrays in JS, we need to make sure the function signature actually is
+a `:call` expression before crawling it.
+"""
+function _crawl_function_signature(signature::Expr)
+    if signature.head == :call
+        return crawl(signature)
+    elseif signature.head == :tuple
+        return crawl(Expr(:call, Symbol(""), signature.args...))
+    end
+    error("Invalid function signature (expected :call or :tuple Expr).")
+end
+function _crawl_function_signature(signature)
+    error("Invalid JS function signature: $(signature).")
 end
 
 # NOTE: We need to treat arrow functions differently than normal functions
@@ -25,7 +49,7 @@ end
 function crawl(::Val{:(->)}, arguments, body)
     return :(JSAST(
         :arrowfunction,
-        $(arrowarguments2call(arguments)),
+        $(_crawl_arrow_signature(arguments)),
         $(crawl(body)),
     ))
 end
@@ -103,7 +127,7 @@ function deparse_returnify_block(block::JSNode)
 end
 
 """
-    arguments2call(expr)
+    _crawl_arrow_signature(expr)
 
 Convert arrow function arguments to a `JSAST` with head `call`.
 This works by turning a tuple of arguments (or a symbol in the case of a single
@@ -111,24 +135,5 @@ argument) into a `call` whose function name is an empty string (which matches
 the javascript syntax where the function signature looks like a call but with
 an optional function name).
 """
-function arrowarguments2call(ex::Expr)
-    if ex.head != :tuple
-        error("Cannot convert non-tuple expression to a call.")
-    end
-    # This is kind of a hack but we convert this to a call with an empty
-    # function name since a call is expected to be the head of a JSAST for a
-    # function declaration.
-    return :(JSAST(
-        :call,
-        JSTerminal(JSString("")),
-        $(crawl.(ex.args)...),
-    ))
-end
-
-arrowarguments2call(ex::Symbol) = :(
-    JSAST(
-        :call,
-        JSTerminal(JSString("")),
-        $(crawl(ex)),
-    )
-)
+_crawl_arrow_signature(ex::Expr) = _crawl_function_signature(ex)
+_crawl_arrow_signature(s::Symbol) = _crawl_function_signature(:($s, ))

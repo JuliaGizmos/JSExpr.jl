@@ -13,7 +13,7 @@ using JSExpr: @crawl, deparse, JSTerminal, JSString
     @testset "anonymous function-keyword function" begin
         @test string(@js(
             function (x, y) console.log(x + y) end
-        )) == "(function (x,y) { console.log(x + y); })"
+        )) == "(function (x, y) { console.log(x + y); })"
     end
 
     @testset "anonymous arrow function" begin
