@@ -17,6 +17,6 @@ function crawl_call(::Val{:(:)}, start::Integer, stop::Integer)
     )...))))
 end
 
-function crawl_call(::Val{Colon}, args...)
+function crawl_call(::Val{:(:)}, args...)
     error("Range syntax cannot be parsed by JSExpr.")
 end

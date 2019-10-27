@@ -27,5 +27,9 @@ using JSExpr
                 "spam" => 1 + 2,
             }
         )) == """{["foo"]: "bar",["spam"]: 1 + 2}"""
+
+        @test_throws ErrorException JSExpr.crawl(:({foo}))
+        @test_throws ErrorException JSExpr.crawl(:({foo = bar}))
+        @test_throws ErrorException JSExpr.crawl(:({foo => "bar", "spam"}))
     end
 end
