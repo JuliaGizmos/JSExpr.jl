@@ -1,207 +1,133 @@
-__precompile__()
-
 module JSExpr
 
-using JSON, MacroTools, WebIO
-export JSString, @js, @js_str, @var, @new
+# Note: we re-export @js_str for convenience from WebIO.
+# In the future(?) we might move JSString from WebIO to JSExpr.jl and reverse
+# the direction of the dependencies.
+export @js, @js_str
 
-import WebIO: JSString, JSONContext, JSEvalSerialization, scopeid
+using WebIO
+using WebIO: JSString, @js_str, tojs
+using Observables
 using Observables: AbstractObservable
 
-macro js(expr)
-    :(JSString(string($(jsstring(expr)...))))
+JSString(s::JSString) = s # Definitely move this into WebIO.
+jsstring(xs::JSString...) = JSString(string([x.s for x in xs]...))
+jsstring(xs...) = jsstring(JSString.(xs)...)
+
+include("./ast.jl")
+
+"""
+    crawl(expr)
+
+Crawl a given Julia expression and convert it into a `JSNode`.
+
+There are to versions of `crawl`. The former (`crawl(expr)`) crawls an entire
+expression recursively and converts it into a `JSNode`.
+
+# Examples
+```julia-repl
+julia> JSExpr.crawl(:(foo = "bar"))
+:(JSAST(:(=), JSTerminal(:foo), JSTerminal("bar")))
+```
+"""
+function crawl(ex::Expr)::Expr
+    crawl(Val(ex.head), ex.args...)
 end
 
-# Expressions
+"""
+    crawl(Val(head), args...)
 
-jsexpr(x::JSString) = x.s
-jsexpr(x::Symbol) = (x==:nothing ? "null" : string(x))
-jsexpr(x) = sprint(x) do io, s
-    JSON.show_json(io, JSEvalSerialization(), s)
+Enables multiple dispatch on expressions using `Val` types.
+The expectation is that each dispatched crawl function returns an expression
+that yields a `JSNode` by calling the crawl-function recursively on deeper
+expressions.
+
+# Examples
+```julia
+function crawl(::Val{:+}, lhs, rhs)
+    :(JSAST(:+, \$(crawl(lhs)), \$(crawl(rhs))))
 end
-jsexpr(x::QuoteNode) = x.value isa Symbol ? jsexpr(string(x.value)) : jsexpr(x.value)
-jsexpr(x::LineNumberNode) = nothing
-
-include("util.jl")
-
-function jsexpr_joined(xs, delim=",")
-    isempty(xs) && return ""
-    F(intersperse(jsexpr.(xs), delim))
-end
-
-jsstring(x) = _simplify(_flatten(jsexpr(x)))
-
-function block_expr(args, delim="; ")
-    #print(io, "{")
-    jsexpr_joined(rmlines(args), delim)
-    #print(io, "}")
+```
+"""
+function crawl(::Val{T}, args...)::Expr where {T}
+    error("Expression type ($(QuoteNode(T))) not supported.")
 end
 
-function call_expr(f, args...)
-    if f in [:(=), :+, :-, :*, :/, :%, :(==), :(===),
-             :(!=), :(!==), :(>), :(<), :(<=), :(>=)]
-        return F(["(", jsexpr_joined(args, string(f)), ")"])
+"""
+    deparse(jsnode)
+
+Convert a `JSNode` to `JSString`.
+"""
+function deparse(ex::JSAST)::JSString
+    deparse(Val(ex.head), ex.args...)::JSString
+end
+
+"""
+    deparse(Val(head), args...)
+
+Transform a JSAST with the specified `head` and `args` into a `JSString`.
+The expectation is that each dispatched deparse function returns a bare
+`JSString` literal, formed by appropriate ordering and concatenation of the
+output of recursive calls to the `deparse` function.
+"""
+function deparse(::Val{H}, args...) where {H}
+    # This should only happen if there is an asymmetry between crawl and
+    # deparse; for example, if crawl is implemented but deparse was forgotten,
+    # or crawl generates a JSAST with more arguments than the deparse method
+    # supports.
+    error("JSAST expression type ($(QuoteNode(H))) cannot be deparsed.")
+end
+
+"""
+    @js(ex)
+
+A macro to convert a Julia expression into a `JSString`.
+"""
+macro js(ex)
+    return Expr(:call, :deparse, crawl(ex))
+end
+
+"""
+    @crawl(ex)
+
+A macro to generate a `JSNode` for the given expression.
+This is useful for making assertions about the generated AST structure, which
+is in turn useful for testing, but most users should just use `@js`.
+"""
+macro crawl(ex)
+    return crawl(ex)
+end
+
+crawl(::LineNumberNode) = :(nothing)
+
+# For QuoteNode's, if they wrap symbols (and they usually do), we implicitly
+# convert them into strings. This is what we want in a lot of places, but there
+# are a few places where we need to be careful about this (namely, while
+# translating dot expressions).
+function crawl(node::QuoteNode)
+    if isa(node.value, Symbol)
+        return crawl(string(node.value))
     end
-    F([jsexpr(f), "(", F([jsexpr_joined(args)]), ")"])
+    return crawl(node.value)
 end
 
-function obs_get_expr(x)
-    # empty [], special case to get value from an Observable
-    F(["WebIO.getval(", jsexpr(x), ")"])
+# All other terminals
+crawl(ex::T) where {T} = :(JSTerminal($(esc(ex))))
+
+include("./literals.jl")
+include("./control.jl")
+include("./call.jl")
+include("./infix.jl")
+include("./macrocall.jl")
+include("./arrays.jl")
+include("./objects.jl")
+include("./jskeywords.jl")
+include("./interpolation.jl")
+include("./function.jl")
+include("./ref.jl")
+include("./juliaisms.jl")
+include("./compat.jl")
+
+include("./webio.jl")
+
 end
-
-function obs_set_expr(x, val)
-    # empty [], special case to get value from an Observable
-    F(["WebIO.setval(", jsexpr_joined([x, val]), ")"])
-end
-
-function jsexpr(o::AbstractObservable)
-    if !haskey(WebIO.observ_id_dict, o)
-        error("No scope associated with observer being interpolated")
-    end
-    _scope, name = WebIO.observ_id_dict[o]
-    _scope.value === nothing && error("Scope of the observable doesn't exist anymore.")
-    scope = _scope.value
-
-    obsobj = Dict("type" => "observable",
-                  "scope" => scopeid(scope),
-                  "name" => name,
-                  "id" => WebIO.obsid(o))
-
-    jsexpr(obsobj)
-end
-
-function ref_expr(x, args...)
-    F([jsexpr(x), "[", jsexpr_joined(args), "]"])
-end
-
-function func_expr(args, body)
-    parts = []
-    named = isexpr(args, :call)
-    named || push!(parts, "(")
-    push!(parts, "function ")
-    if named
-        push!(parts, string(args.args[1]))
-        args.args = args.args[2:end]
-    end
-    push!(parts, "(")
-    isexpr(args, Symbol) ? push!(parts, string(args)) : push!(parts, jsexpr_joined(args.args, ","))
-    push!(parts, "){")
-    push!(parts, jsexpr(insert_return(body)))
-    push!(parts, "}")
-    named || push!(parts, ")")
-    F(parts)
-end
-
-function insert_return(ex)
-    if isa(ex, Symbol) || !isexpr(ex, :block)
-        Expr(:return, ex)
-    else
-        isexpr(ex.args[end], :return) && return ex
-        ex1 = copy(ex)
-        ex1.args[end] = insert_return(ex.args[end])
-        ex1
-    end
-end
-
-
-function dict_expr(xs)
-    parts = []
-    xs = map(xs) do x
-        if x.head == :(=) || x.head == :kw
-            push!(parts, F([jsexpr(x.args[1]), ":", jsexpr(x.args[2])]))
-        elseif x.head == :call && x.args[1] == :(=>)
-            push!(parts, F([jsexpr(x.args[2]), ":", jsexpr(x.args[3])]))
-        else
-            error("Invalid pair separator in dict expression")
-        end
-    end
-    F(["{", F(intersperse(parts, ",")), "}"])
-end
-
-function vect_expr(xs)
-    F(["[", F(intersperse([jsexpr(x) for x in xs], ",")), "]"])
-end
-
-function if_block(ex)
-
-    if isexpr(ex, :block)
-        if any(x -> isexpr(x, :macrocall) && x.args[1] == Symbol("@var"), ex.args)
-            error("@js expression error: @var inside an if statement is not supported")
-        end
-        F(["(", block_expr(rmlines(ex).args, ", "), ")"])
-    else
-        jsexpr(ex)
-    end
-end
-
-function if_expr(xs)
-    parts = []
-    if length(xs) >= 2    # we have an if
-        append!(parts, [jsexpr(xs[1]), " ? ", if_block(xs[2])])
-    end
-
-    if length(xs) == 3    # Also have an else
-        append!(parts, [" : ", if_block(xs[3])])
-    else
-        push!(parts, " : undefined")
-    end
-    F(parts)
-end
-
-function for_expr(i, start, to, body, step = 1)
-    F(["for(var $i = $start; $i <= $to; $i = $i + $step){",
-       block_expr(body), "}"])
-end
-
-function jsexpr(x::Expr)
-    isexpr(x, :block) && return block_expr(rmlines(x).args)
-    x = rmlines(x)
-    @match x begin
-        d(xs__) => dict_expr(xs)
-        Dict(xs__) => dict_expr(xs)
-        $(Expr(:comparison, :_, :(==), :_)) => jsexpr_joined([x.args[1], x.args[3]], "==")    # 0.4
-
-        # must include this particular `:call` expr before the catchall below
-        $(Expr(:call, :(==), :_, :_)) => jsexpr_joined([x.args[2], x.args[3]], "==")    # 0.5+
-        f_(xs__) => call_expr(f, xs...)
-        (a_ -> b_) => func_expr(a, b)
-        a_.b_ | a_.(b_) => jsexpr_joined([a, b], ".")
-        (a_[] = val_) => obs_set_expr(a, val)
-        (a_ = b_) => jsexpr_joined([a, b], "=")
-        (a_ += b_) => jsexpr_joined([a, b], "+=")
-        (a_ && b_) => jsexpr_joined([a, b], "&&")
-        (a_ || b_) => jsexpr_joined([a, b], "||")
-        $(Expr(:if, :__)) => if_expr(x.args)
-        $(Expr(:function, :__)) => func_expr(x.args...)
-        a_[] => obs_get_expr(a)
-        a_[i__] => ref_expr(a, i...)
-        [xs__] => vect_expr(xs)
-        (@m_ xs__) => jsexpr(macroexpand(@__MODULE__(), x))
-        (for i_ = start_ : to_
-            body__
-        end) => for_expr(i, start, to, body)
-        (for i_ = start_ : step_ : to_
-            body__
-        end) => for_expr(i, start, to, body, step)
-        (return a__) => (F(["return ", !isempty(a) && a[1] !== nothing ? jsexpr(a...) : ""]))
-        $(Expr(:quote, :_)) => jsexpr(QuoteNode(x.args[1]))
-        $(Expr(:$, :_)) => inter(x.args[1])
-        $(Expr(:new, :c_)) => F(["new ", jsexpr(x.args[1])])
-        $(Expr(:var, :c_)) => F(["var ", jsexpr(x.args[1])])
-        _ => error("JSExpr: Unsupported `$(x.head)` expression, $x")
-    end
-end
-
-function inter(x)
-    if x isa Expr && x.args[1] isa Expr
-        x.args[1].head == :...
-        return :(join(map(jsexpr, $(esc(x.args[1].args[1]))), ","))
-    end
-    :(jsexpr($(esc(x)))) # the expr gets kept around till eval
-end
-
-macro new(x) Expr(:new, esc(x)) end
-macro var(x) Expr(:var, esc(x)) end
-
-end # module
