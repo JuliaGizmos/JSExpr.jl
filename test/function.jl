@@ -4,10 +4,17 @@ using JSExpr: @crawl, deparse, JSTerminal, JSString
 
 @testset "function" begin
 
-    @testset "function return" begin
+    @testset "function keyword" begin
         @test string(@js function add(x, y)
             return x + y
         end) == "function add(x, y) { return x + y; }"
+
+        @test string(@js function log(message)
+            console.log(message)
+        end) == "function log(message) { console.log(message); }"
+
+        @test string(@js function foo() end) == "function foo() {}"
+        @test string(@js function () end) == "(function () {})"
     end
 
     @testset "anonymous function-keyword function" begin

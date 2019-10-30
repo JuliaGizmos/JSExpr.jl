@@ -56,7 +56,7 @@ end
 function deparse(::Val{:arrowfunction}, signature, body)
     return jsstring(
         deparse(signature), " => ",
-        deparse_returnify_block(body),
+        _deparse_returnify_block(body),
     )
 end
 
@@ -78,10 +78,7 @@ function crawl(::Val{:block}, body...)
 end
 function deparse(::Val{:block}, body...)
     if length(body) == 0
-        error(
-            "Invalid JS block expression: " *
-            "must contain at least one statement."
-        )
+        return jsstring("{}")
     end
     return jsstring("{ ", join(deparse.(body), "; "), "; }")
 end
@@ -117,10 +114,13 @@ This ensures that Julia semantics wherein the last expression is implicitly the
 return value is translated to the generated JavaScript code (as is necessary
 for arrow functions to work as expected).
 """
-function deparse_returnify_block(block::JSNode)
+function _deparse_returnify_block(block::JSNode)
     if !(isa(block, JSAST) && block.head == :block)
         @show block
         error("Argument to returnify_block must be a JSAST(:block, ...).")
+    end
+    if isempty(block.args)
+        return deparse(block)
     end
     block.args[end] = returnify_js_statement(block.args[end])
     return deparse(block)
