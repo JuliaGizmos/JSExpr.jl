@@ -32,4 +32,20 @@ using JSExpr
         @test_throws ErrorException JSExpr.crawl(:({foo = bar}))
         @test_throws ErrorException JSExpr.crawl(:({foo => "bar", "spam"}))
     end
+
+    @testset "namedtuple syntax" begin
+        @test string(@js(
+            (
+                foo="foo",
+                bar="bar",
+            )
+        )) == """{["foo"]: "foo",["bar"]: "bar"}"""
+
+        @test_throws ErrorException JSExpr.crawl(:(
+            ("foo"=3, foo="bar")
+        ))
+        @test_throws ErrorException JSExpr.crawl(:(
+            (foo="foo", bar)
+        ))
+    end
 end

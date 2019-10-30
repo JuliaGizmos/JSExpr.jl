@@ -7,16 +7,10 @@ function deparse(::Val{:array}, b::JSNode...)::JSString
 end
 
 # Tuples
-# TODO: We could extend this syntax to support NamedTuples and convert them to
-# objects in JavaScript.
 function crawl(::Val{:tuple}, items...)
-    return :(JSAST(:(array), $(_crawl_tuple_arg.(items)...)))
-end
-
-_crawl_tuple_arg(arg) = crawl(arg)
-function _crawl_tuple_arg(arg::Expr)
-    if expr.head == :(=)
-        error("NamedTuples are not supported by JSExpr.")
+    # This is defined in objecs.jl.
+    if _is_namedtuple(items...)
+        return _crawl_namedtuple(items...)
     end
-    return crawl(arg)
+    return :(JSAST(:array, $(crawl.(items)...)))
 end
