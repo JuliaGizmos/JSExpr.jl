@@ -1,5 +1,4 @@
 crawl(::Val{:braces}, args...) = _crawl_dict(args...)
-crawl_call(::Val{:Dict}, args...) = _crawl_dict(args...)
 
 function _crawl_dict(args...)
     return :(JSAST(
@@ -8,26 +7,66 @@ function _crawl_dict(args...)
     ))
 end
 
-function _crawl_objectpair(expr)
-    if !(expr isa Expr && expr.head == :call && expr.args[1] == :(=>))
-        error("Invalid object pair (expected => expression, got $(expr)).")
+# Enable `@js { foo }` syntax
+function _crawl_objectpair(sym::Symbol)
+    return :(
+        JSAST(:objectpair, JSTerminal($(string(sym))), $(crawl(sym)))
+    )
+end
+
+# Enable `@js { foo=foo }` and `@js { :foo => foo }` syntax
+function _crawl_objectpair(expr::Expr)
+    if expr.head == :call && expr.args[1] == :(=>)
+        lhs, rhs = expr.args[2:3]
+        # Ensure that the LHS of the pair is a Symbol literal (which will be
+        # wrapped in a QuoteNode in the Expr) or a string.
+        if lhs isa QuoteNode
+            lhs = string(_unquote(lhs))
+        elseif lhs isa AbstractString
+            lhs = string(lhs)
+        else
+            lhs_repr = lhs isa Symbol ? "identifier $(lhs)" : string(lhs)
+            error(
+                "Invalid key expression in object literal syntax " *
+                "(LHS of pair expression must be a Symbol or String, " *
+                "got $(lhs_repr))."
+            )
+        end
+    elseif expr.head == :(=)
+        lhs, rhs = expr.args
+        if !(lhs isa Symbol)
+            error(
+                "Invalid key expression in object literal syntax " *
+                "(LHS of equals expression must be a literal identifier, " *
+                "got $(lhs))."
+            )
+        end
+        lhs = string(lhs)
     end
     return :(
-        JSAST(:objectpair, $(crawl.(expr.args[2:3])...))
+        JSAST(:objectpair, JSTerminal($(lhs::String)), $(crawl(rhs)))
+    )
+end
+
+# Disallow things like `@js { "foo" }`
+function _crawl_objectpair(expr::Any)
+    error(
+        "Invalid object literal item " *
+        "(expected pair expression, equals expression, or literal identifier)."
     )
 end
 
 function deparse(::Val{:object}, pairs...)
     return jsstring(
         "{",
-        join(deparse.(pairs), ","),
+        join(deparse.(pairs), ", "),
         "}",
     )
-end
+end#
 
 function deparse(::Val{:objectpair}, key, value)
     return jsstring(
-        "[", deparse(key), "]: ",
+        deparse(key), ": ",
         deparse(value),
     )
 end

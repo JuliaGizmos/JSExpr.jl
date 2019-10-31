@@ -2,35 +2,43 @@ using Test
 using JSExpr
 
 @testset "objects" begin
-    @testset "object dict" begin
+    @testset "braces syntax" begin
         @test string(@js(
-            Dict(
+            {
                 "foo" => "bar",
                 "spam" => 1 + 2,
-            )
-        )) == """{["foo"]: "bar",["spam"]: 1 + 2}"""
-    end
+            }
+        )) == """{"foo": "bar", "spam": 1 + 2}"""
 
-    @testset "object dict with symbol keys" begin
         @test string(@js(
             {
                 :foo => "bar",
                 :spam => 1 + 2,
             }
-        )) == """{["foo"]: "bar",["spam"]: 1 + 2}"""
-    end
+        )) == """{"foo": "bar", "spam": 1 + 2}"""
 
-    @testset "object braces syntax" begin
         @test string(@js(
             {
-                "foo" => "bar",
+                foo = "bar",
                 "spam" => 1 + 2,
             }
-        )) == """{["foo"]: "bar",["spam"]: 1 + 2}"""
+        )) == """{"foo": "bar", "spam": 1 + 2}"""
 
-        @test_throws ErrorException JSExpr.crawl(:({foo}))
-        @test_throws ErrorException JSExpr.crawl(:({foo = bar}))
-        @test_throws ErrorException JSExpr.crawl(:({foo => "bar", "spam"}))
+        @test string(@js(
+            { foo }
+        )) == """{"foo": foo}"""
+
+        @test string(@js(
+            {
+                a,
+                b = "foo",
+                :c => "bar",
+            }
+        )) == """{"a": a, "b": "foo", "c": "bar"}"""
+
+        @test_throws ErrorException JSExpr.crawl(:({ foo => "bar" }))
+        @test_throws ErrorException JSExpr.crawl(:({ "foo" }))
+        @test_throws ErrorException JSExpr.crawl(:({ :foo=foo }))
     end
 
     @testset "namedtuple syntax" begin
@@ -39,7 +47,7 @@ using JSExpr
                 foo="foo",
                 bar="bar",
             )
-        )) == """{["foo"]: "foo",["bar"]: "bar"}"""
+        )) == """{"foo": "foo", "bar": "bar"}"""
 
         @test_throws ErrorException JSExpr.crawl(:(
             ("foo"=3, foo="bar")
