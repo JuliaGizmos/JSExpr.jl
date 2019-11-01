@@ -21,9 +21,6 @@ include("./ast.jl")
 
 Crawl a given Julia expression and convert it into a `JSNode`.
 
-There are to versions of `crawl`. The former (`crawl(expr)`) crawls an entire
-expression recursively and converts it into a `JSNode`.
-
 # Examples
 ```julia-repl
 julia> JSExpr.crawl(:(foo = "bar"))
@@ -35,11 +32,11 @@ function crawl(ex::Expr)::Expr
 end
 
 """
-    crawl(Val(head), args...)
+    crawl(Val(head), args...)::Expr
 
 Enables multiple dispatch on expressions using `Val` types.
 The expectation is that each dispatched crawl function returns an expression
-that yields a `JSNode` by calling the crawl-function recursively on deeper
+that yields a `JSNode` by calling the crawl-function recursively on nested
 expressions.
 
 # Examples

@@ -1,5 +1,9 @@
 """
     crawl_macro(Val(:macroname)[, l::LineNumberNode], exprs...)
+
+Crawl a `:macrocall` expression.
+This allows certain macro names to be handled specially by JSExpr (such as
+`@var` and `@new`).
 """
 function crawl_macrocall end
 
@@ -8,11 +12,6 @@ function crawl(h::Val{:macrocall}, m::Symbol, l::LineNumberNode, b...)
     return crawl_macrocall(Val(m), l, b...)
 end
 
-"""
-    crawl_macrocall(::Val{M}, ::LineNumberNode, body...)
-
-Crawl a :macrocall expression for macro `M`.
-"""
 function crawl_macrocall(m::Val{M}, l::LineNumberNode, b...) where {M}
     if applicable(crawl_macrocall, m, b...)
         return crawl_macrocall(m, b...)

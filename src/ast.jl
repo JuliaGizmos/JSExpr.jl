@@ -1,7 +1,13 @@
+"""
+A node that represents a piece of a JavaScript abstract syntax tree.
+
+Every node is either a [`JSAST`](@ref) (_i.e._, non-terminal node) or a
+[`JSTerminal`](@ref).
+"""
 abstract type JSNode end
 
 """
-    JSTerminal(s)
+    JSTerminal(s::JSString)
 
 A JavaScript terminal node.
 Any JavaScript literal is represented as a `JSTerminal` node.
@@ -15,10 +21,10 @@ JSTerminal(x::String) = JSTerminal(js"$x")
 JSTerminal(::Nothing) = JSTerminal(js"null")
 
 """
-    JSAST(head[, body])
+    JSAST(head::Symbol, args::JSNode...)
 
 A struct that represents an abstract syntax tree for a JavaScript expression.
-This is meant to be analogous to the Julia builtin `Expr`.
+This is meant to be analogous to Julia's `Expr`s.
 """
 struct JSAST <: JSNode
     head::Symbol
