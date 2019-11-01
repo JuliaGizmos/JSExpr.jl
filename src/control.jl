@@ -1,27 +1,57 @@
-# If
 function crawl(::Val{:if}, test, consequent, alternate=nothing)
+    return _crawl_if(:if, test, consequent, alternate)
+end
+
+function crawl(::Val{:elseif}, test, consequent, alternate=nothing)
+    # There's some weirdness in the way Julia parses `if ... elseif ...`.
+    # It wraps the test expression in a block (probably to include the
+    # LineNumberNode information).
+    @assert (test isa Expr && test.head == :block) "Unparseable :elseif expression."
+    test_args = filter(x -> !isa(x, LineNumberNode), test.args)
+    @assert (length(test_args) == 1) "Invalid test in :elseif expression ($(test_args))."
+    test = test_args[1]
+    return _crawl_if(:elseif, test, consequent, alternate)
+end
+
+function _crawl_if(head::Symbol, test, consequent, alternate)
     body = crawl.(
         alternate === nothing
         ? [test, consequent]
         : [test, consequent, alternate]
     )
-    return :(JSAST(:if, $(body...)))
+    return :(JSAST($(QuoteNode(head)), $(body...)))
 end
+
 function deparse(
         ::Val{:if},
         test::JSNode,
         consequent::JSNode,
         alternate::Union{JSNode, Nothing} = nothing
 )::JSString
-    alternate_string = (
-        alternate === nothing
-        ? jsstring("")
-        : jsstring(" else ", deparse(alternate))
-    )
     return jsstring(
         "if (", deparse(test), ") ",
         deparse(consequent),
-        alternate_string,
+        _deparse_if_alternate(alternate),
+    )
+end
+
+# The alternate of an if statement be nothing, an "else" clause (in which case,
+# the head of the expression is simply a block), or an "elseif" (in which case
+# the head of the expression is :elseif).
+_deparse_if_alternate(::Nothing) = jsstring("")
+function _deparse_if_alternate(expr::JSNode)
+    if expr.head == :elseif
+        return jsstring(
+            # This is a hack that uses the fact that we can treat the args of an
+            # elseif as an if and just change the initial "if" to "elseif".
+            " else", deparse(Val(:if), expr.args...)
+        )
+    elseif expr.head == :block
+        return jsstring(" else ", deparse(expr))
+    end
+    error(
+        "Invalid alternate expression in :if expression " *
+        "(expected :elseif or :block expression, got $(expr))."
     )
 end
 

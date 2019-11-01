@@ -151,4 +151,9 @@ end
     @testset "logical infix associativity" begin
         @test string(@js foo && (bar || spam)) == "foo && (bar || spam)"
     end
+
+    @testset "parenthesization" begin
+        @test string(@js foo && bar()) == "foo && bar()"
+        @test string(@js (foo && bar()) || spam()) == "(foo && bar()) || spam()"
+    end
 end

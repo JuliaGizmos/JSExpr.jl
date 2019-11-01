@@ -3,6 +3,7 @@ using WebIO
 import WebIO: scopeid
 using Test
 
+include("./ast.jl")
 include("./test-jsexpr2.jl")
 include("./infix.jl")
 include("./interpolation.jl")
