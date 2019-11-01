@@ -12,14 +12,8 @@ function crawl(h::Val{:macrocall}, m::Symbol, l::LineNumberNode, b...)
     return crawl_macrocall(Val(m), l, b...)
 end
 
-function crawl_macrocall(m::Val{M}, l::LineNumberNode, b...) where {M}
-    if applicable(crawl_macrocall, m, b...)
-        return crawl_macrocall(m, b...)
-    end
-
-    # For macros, we take the general strategy of just assuming that whatever
-    # the macro returns should be interpolated into the JS code.
-    return :(JSTerminal(_tojsstring($(esc(eval))(
-        Expr(:macrocall, $(esc(M)), $l, $(QuoteNode.(b)...)),
-    ))))
+function crawl_macrocall(m::Val{M}, ::LineNumberNode, b...) where {M}
+    # Remove LineNumberNode info to allow for more convenient crawl_macrocall
+    # definitions that don't need it.
+    return crawl_macrocall(m, b...)
 end
