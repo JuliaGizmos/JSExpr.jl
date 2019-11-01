@@ -7,8 +7,8 @@ using JSExpr: @crawl, deparse, JSTerminal, JSAST
 # myjs = @js foo = nothing
 # @test myjs.s == "foo = null"
 
-@testset "parsing of special symbols" begin
-    @testset "parsing of nothing" begin
+@testset "special symbols" begin
+    @testset "nothing" begin
         jsast = @crawl(foo = nothing)
         @test jsast.head == :(=)
         @test length(jsast.args) == 2
@@ -19,7 +19,7 @@ using JSExpr: @crawl, deparse, JSTerminal, JSAST
         @test jsstr == js"foo = null"
     end
 
-    @testset "parsing of booleans" begin
+    @testset "booleans" begin
         jsast = @crawl(foo = true)
         @test jsast.head == :(=)
         @test length(jsast.args) == 2
@@ -40,7 +40,7 @@ using JSExpr: @crawl, deparse, JSTerminal, JSAST
     end
 end
 
-@testset "parsing of numbers" begin
+@testset "number literals" begin
     jsast = @crawl(foo = 123)
     @test jsast.head == :(=)
     @test length(jsast.args) == 2
@@ -51,7 +51,7 @@ end
     @test jsstr == js"foo = 123"
 end
 
-@testset "parsing of strings" begin
+@testset "string literals" begin
     jsast = @crawl(foo = "foo")
     @test jsast.head == :(=)
     @test length(jsast.args) == 2
@@ -60,4 +60,6 @@ end
 
     jsstr = deparse(jsast)
     @test jsstr == js"foo = \"foo\""
+
+    @test string(@js """foo is "fantastic"!""") == "\"foo is \\\"fantastic\\\"!\""
 end
