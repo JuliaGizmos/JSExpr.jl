@@ -5,10 +5,6 @@ export JSString
 
 using JSON
 
-# TODO: Get rid of dependency on WebIO and Observables
-using WebIO: WebIO
-using Observables: Observables
-
 include("./jsstring.jl")
 include("./ast.jl")
 
@@ -120,7 +116,5 @@ include("./function.jl")
 include("./ref.jl")
 include("./juliaisms.jl")
 include("./compat.jl")
-
-include("./webio.jl")
 
 end
