@@ -1,19 +1,15 @@
 module JSExpr
 
-# Note: we re-export @js_str for convenience from WebIO.
-# In the future(?) we might move JSString from WebIO to JSExpr.jl and reverse
-# the direction of the dependencies.
 export @js, @js_str
+export JSString
 
-using WebIO
-using WebIO: JSString, @js_str, tojs
-using Observables
-using Observables: AbstractObservable
+using JSON
 
-JSString(s::JSString) = s # Definitely move this into WebIO.
-jsstring(xs::JSString...) = JSString(string([x.s for x in xs]...))
-jsstring(xs...) = jsstring(JSString.(xs)...)
+# TODO: Get rid of dependency on WebIO and Observables
+using WebIO: WebIO
+using Observables: Observables
 
+include("./jsstring.jl")
 include("./ast.jl")
 
 """

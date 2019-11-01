@@ -1,8 +1,10 @@
 using JSExpr
-using WebIO
+using WebIO: WebIO
+using JSExpr: @js_str
 import WebIO: scopeid
 using Test
 
+include("./jsstring.jl")
 include("./ast.jl")
 include("./literals.jl")
 include("./infix.jl")

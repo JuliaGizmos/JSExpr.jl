@@ -1,6 +1,4 @@
 using Test
-using WebIO
-using WebIO: JSString
 using JSExpr
 using JSExpr: @crawl, deparse, JSTerminal, JSAST
 

@@ -17,3 +17,7 @@ function crawl_macrocall(m::Val{M}, ::LineNumberNode, b...) where {M}
     # definitions that don't need it.
     return crawl_macrocall(m, b...)
 end
+
+function crawl_macrocall(m::Val{Symbol("@js_str")}, l::LineNumberNode, body...)
+    return :(JSTerminal(@js_str $(body...)))
+end

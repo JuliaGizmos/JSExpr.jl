@@ -1,6 +1,3 @@
-using JSON
-using WebIO: tojs
-
 function crawl(::Val{:$}, x)
     return :(interpolate($(esc(x))))
 end

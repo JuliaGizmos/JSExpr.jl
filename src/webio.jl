@@ -12,9 +12,9 @@ a good thing (otherwise people might think that interpolating an Observable will
 yield its current value).
 """
 struct _ObservableJSNode <: JSNode
-    obs::AbstractObservable
+    obs::Observables.AbstractObservable
 end
-interpolate(obs::AbstractObservable) = _ObservableJSNode(obs)
+interpolate(obs::Observables.AbstractObservable) = _ObservableJSNode(obs)
 
 """
 A JSAST node that represents an observable dereference.
@@ -25,7 +25,7 @@ appropriate frontend method to set the value of the Observable (i.e., we need
 `WebIO.setval(..., newValue)` instead of `WebIO.getval(...) = newVal`).
 """
 struct _ObservableDerefJSNode <: JSNode
-    obs::AbstractObservable
+    obs::Observables.AbstractObservable
 end
 dereference(obs_node::_ObservableJSNode) = _ObservableDerefJSNode(obs_node.obs)
 
@@ -48,7 +48,7 @@ function deparse(::Val{:(=)}, obs_deref::_ObservableDerefJSNode, rhs)
     return js"WebIO.setval($obs_info, $(deparse(rhs)))"
 end
 
-function _obs_info(obs::AbstractObservable)
+function _obs_info(obs::Observables.AbstractObservable)
     if !haskey(WebIO.observ_id_dict, obs)
         error("No scope associated with observable being interpolated")
     end
