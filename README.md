@@ -28,8 +28,9 @@ JSString("initializeProgram({\"foo\":\"bar\"});")
 
 ## Interpolation
 
-You can interpolate Julia objects or `JSString`'s (e.g. from other `@js` or
-  `js"..."` invocations) as well.
+You can interpolate Julia objects or `JSString`s (e.g. from other `@js` or
+  `js"..."` invocations) as well as values from Julia (such as normal
+  strings, `Dict`s, etc.).
 
 ```julia
 julia> foo = 42;
@@ -60,14 +61,19 @@ JSString("const link = <a href=\"https://julialang.org/\">\"Julia\"</a>")
 Objects are ubiquitous in JavaScript.
 To create objects using JSExpr, you can use a simple syntax using braces.
 There are two variants of this syntax (_NamedTuple_ style and _Pair_ style).
+You can also create objects use normal `NamedTuple` syntax.
 
 ```julia
-# NamedTuple style
+# NamedTuple braces style
 julia> @js { foo="foo", bar="bar" }
 JSString("{\"foo\": \"foo\", \"bar\": \"bar\"}")
 
-# Pair style
+# Pair braces style (similar to Dict constructor)
 julia> @js { :foo => "foo", :bar => "bar" }
+JSString("{\"foo\": \"foo\", \"bar\": \"bar\"}")
+
+# NamedTuple syntax
+julia> @js (foo="foo", bar="bar")
 JSString("{\"foo\": \"foo\", \"bar\": \"bar\"}")
 ```
 
@@ -75,18 +81,18 @@ JSString("{\"foo\": \"foo\", \"bar\": \"bar\"}")
 JSExpr does not attempt to translate _semantics_ between Julia and JavaScript
   (with a few very minor exceptions covered in _Juliaisms_ below).
 Since `Dict` can be a valid function name in JavaScript, we do not translate
-  the Julia `Dict` function to an object creation syntax.
+  the Julia `Dict` constructor to an object creation syntax.
 
 ## Juliaisms
 JSExpr, for the most part, does not attempt to translate semantics between
   Julia and the resulting JavaScript code.
-The reason for the decision is due to the fact that Julia and JavaScript are
-  wildly different languages and we would invariably screw up some edge cases.
+The reason for the decision is that Julia and JavaScript are
+  wildly different languages and we would invariably mess up some edge cases.
 We do, however, translate a few Julian constructs to a _semantically_ equivalent
   JavaScript.
 
 #### Range Syntax (`...:...`)
-JavaScript doesn't have a native `Range` object and the typical way of repeat a
+JavaScript doesn't have a native `Range` object and the typical way to repeat a
 loop body `n` times is to use a C-style `for` loop. There is no syntax for this
 style of for loop in Julia, and `:` is not a valid JavaScript identifier, so the
 colon function (`:`) is translated to JavaScript code that acts like a `Range`
@@ -99,7 +105,7 @@ julia> @js for i in 1:10
 JSString("for (let i of (new Array(10).fill(undefined).map((_, i) => i + 1))) { console.log(i); }")
 ```
 
-The resulting code is very ugly and will fully materialize the range and so
+The resulting JS is very ugly and will fully materialize the range and so
 should only be used for relatively small ranges.
 
 ## Serialization
@@ -123,8 +129,11 @@ julia> JSON.print(Dict("foo" => "bar", "bar"=>f))
 - JavaScript keywords (`@new`, `@var`, `@let`, `@const`)
 
 ## Unsupported Expressions
+### Not Yet Supported
 * Ternary expressions (`... ? ... : ...`)
 * `try` / `catch`
+
+### Might Never Be Supported
 * Object destructuring
 * Argument splatting
 
@@ -132,10 +141,13 @@ If you notice anything else that's not supported or doesn't work as intended,
 please [open an issue](https://github.com/JuliaGizmos/JSExpr.jl/issues).
 
 #### Ternary Expressions
-Julia lowers the `if` statements and ternary expressions (`... ? ... : ...`) to
-the same `Expr` value, so JSExpr cannot distinguish between the two.
+Julia lowers (during parse) `if` statements and ternary expressions (`... ? ... : ...`)
+to the same `Expr`, so JSExpr cannot distinguish between the two.
 This poses an issue because JavaScript does not allow non-expression statements
-(e.g., loops and variable declarations) inside of a ternary expression.
+(e.g., loops and variable declarations) inside of a ternary expression, but if
+statements cannot be used in contexts which expect a value (but they _can_ be
+used in such contexts in Julia).
+
 There are plans to implement a heuristic to emit a ternary expression if
   appropriate (e.g., if the bodies of the ternary expression contains only one
   sub-expression) but this is not implemented yet.

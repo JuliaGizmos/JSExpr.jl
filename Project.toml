@@ -7,6 +7,7 @@ version = "1.0.0"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 
 [compat]
+JSON = "0.18"
 julia = "0.7, 1"
 
 [extras]
