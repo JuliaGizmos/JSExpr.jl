@@ -4,83 +4,138 @@
 |-------|----------|
 | [![Build Status](https://travis-ci.org/JuliaGizmos/JSExpr.jl.svg?branch=master)](https://travis-ci.org/JuliaGizmos/JSExpr.jl) | [![codecov](https://codecov.io/gh/JuliaGizmos/JSExpr.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaGizmos/JSExpr.jl)
 
-This package provides the `@js` macro which translates a Julia expression to JavaScript.
+This package provides two macros that are used to write JavaScript code inside
+of Julia programs.
+* The `@js` macro translates Julia syntax to the equivalent JavaScript
+* The `@js"..."` macro is used to write code using string literals with _smart_
+  interpolation of values from Julia
 
-## Example
+## Examples
 
 ```julia
 julia> using JSExpr
 
 julia> @js document.querySelector("#root")
-WebIO.JSString("document.querySelector(\"#root\")")
+JSString("document.querySelector(\"#root\")")
 
-julia> @js (a,b) -> a+b
-WebIO.JSString("(function (a,b){return (a+b)})")
+julia> @js (a, b) -> a + b
+JSString("(a, b) => { return a + b; }")
+
+julia> config = Dict("foo" => "bar");
+julia> js"initializeProgram($config);"
+JSString("initializeProgram({\"foo\":\"bar\"});")
 ```
-
-The `JSString` object wraps a Julia string. You can access the plain string from the `.s` field.
 
 ## Interpolation
 
-You can interpolate Julia objects or `JSString` expressions (i.e. result of `@js` macro invocations) in a `@js` macrocall.
+You can interpolate Julia objects or `JSString`'s (e.g. from other `@js` or
+  `js"..."` invocations) as well.
 
 ```julia
-julia> foo = 42
-42
-
+julia> foo = 42;
 julia> callback = @js a -> a + $foo
-WebIO.JSString("(function (a){return (a+42)})")
+JSString("(a) => { return a + 42; }")
 
 julia> f = @js array -> array.map($callback)
-WebIO.JSString("(function (array){return array.map((function (a){return (a+42)}))})")
+JSString("(array) => { return array.map((a) => { return a + 42; }); }")
 ```
 
-Converting a `JSString` or an object containing it to JSON serializes JSString as a string.
+#### Custom Interpolation
+By default, values are serialized using the `JSON` package.
+This makes sense for `Dict`s, `Array`s, and most other "primitive" types.
+
+3rd-party packages can customize serialization of their own types by defining
+a method for `JSExpr.interpolate`.
+The return value of `JSExpr.interpolate` should be a `JSNode`.
 
 ```julia
+julia> struct Link; text::String; href::String; end;
+julia> JSExpr.interpolate(link::Link) = JSExpr.JSTerminal(js"<a href=$(link.href)>$(link.text)</a>");
+julia> @js @const link = $(Link("Julia", "https://julialang.org/"))
+JSString("const link = <a href=\"https://julialang.org/\">\"Julia\"</a>")
+```
+
+## Object Literals
+
+Objects are ubiquitous in JavaScript.
+To create objects using JSExpr, you can use a simple syntax using braces.
+There are two variants of this syntax (_NamedTuple_ style and _Pair_ style).
+
+```julia
+# NamedTuple style
+julia> @js { foo="foo", bar="bar" }
+JSString("{\"foo\": \"foo\", \"bar\": \"bar\"}")
+
+# Pair style
+julia> @js { :foo => "foo", :bar => "bar" }
+JSString("{\"foo\": \"foo\", \"bar\": \"bar\"}")
+```
+
+#### Why not `Dict`?
+JSExpr does not attempt to translate _semantics_ between Julia and JavaScript
+  (with a few very minor exceptions covered in _Juliaisms_ below).
+Since `Dict` can be a valid function name in JavaScript, we do not translate
+  the Julia `Dict` function to an object creation syntax.
+
+## Juliaisms
+JSExpr, for the most part, does not attempt to translate semantics between
+  Julia and the resulting JavaScript code.
+The reason for the decision is due to the fact that Julia and JavaScript are
+  wildly different languages and we would invariably screw up some edge cases.
+We do, however, translate a few Julian constructs to a _semantically_ equivalent
+  JavaScript.
+
+#### Range Syntax (`...:...`)
+JavaScript doesn't have a native `Range` object and the typical way of repeat a
+loop body `n` times is to use a C-style `for` loop. There is no syntax for this
+style of for loop in Julia, and `:` is not a valid JavaScript identifier, so the
+colon function (`:`) is translated to JavaScript code that acts like a `Range`
+object in Julia.
+
+```julia
+julia> @js for i in 1:10
+         console.log(i)
+       end
+JSString("for (let i of (new Array(10).fill(undefined).map((_, i) => i + 1))) { console.log(i); }")
+```
+
+The resulting code is very ugly and will fully materialize the range and so
+should only be used for relatively small ranges.
+
+## Serialization
+
+Serializing a `JSString` to JSON will result in a normal string containing the
+JavaScript code.
+
+```julia
+julia> f = @js array -> array.map($callback);
 julia> JSON.print(Dict("foo" => "bar", "bar"=>f))
-{"bar":"(function (array){return array.map((function (a){return (a+42)}))})","foo":"bar"}
-```
-This is not ideal when you want to use the serialized output as JavaScript, for example in a `<script>` tag. In this case, you should use `JSExpr.jsexpr`
-
-```julia
-julia> @js $(Dict("foo" => "bar", "bar"=>f))
-WebIO.JSString("{\"bar\":(function (array){return array.map((function (a){return (a+42)}))}),\"foo\":\"bar\"}")
+{"bar":"(array) => { return array.map((a) => { return a + 42; }); }","foo":"bar"}
 ```
 
-## Object literals
-
-The `@js` equivalent of
-
-```js
-{foo: 42, bar: "baz"}
-```
-
-is
-
-```js
-julia> @js d(foo=42, bar="baz")
-WebIO.JSString("{foo:42,bar:\"baz\"}")
-```
-
-or a `Dict`
-
-```
-julia> @js Dict(:foo=>42, :bar=>"baz")
-WebIO.JSString("{foo:42,bar:\"baz\"}")
-```
-
-## Supported expressions
-
-- Function call
+## Supported Expressions
+- Function calls
 - Comparison operators
-- Dictionary / object literal
-- Anonymous functions (automatically return the result)
-- Function expressions (ditto)
-- Assignment, `=` and `+=`, `-=`, `*=`, `&=`, `|=`
-- If statements (`@var` expressions are not allowed in `if` statements yet). Note: `if` expressions are lowered to the ternary operator and hence return a value - this allows them to be used as the last expression in a function.
-- Array indexing
-- `for` expression on range literals (i.e. `for x in a:b` or `for x in a:s:b`)
-- `return` statements
-- `@new Foo()` as the equivalent of `new Foo()` in JS
-- `@var foo = bar` as the equivalent of `var foo = bar` in JS
+- Object and array literals
+- Function creation (named and anonymous functions)
+- If statements
+- For and while loops
+- JavaScript keywords (`@new`, `@var`, `@let`, `@const`)
+
+## Unsupported Expressions
+* Ternary expressions (`... ? ... : ...`)
+* `try` / `catch`
+* Object destructuring
+* Argument splatting
+
+If you notice anything else that's not supported or doesn't work as intended,
+please [open an issue](https://github.com/JuliaGizmos/JSExpr.jl/issues).
+
+#### Ternary Expressions
+Julia lowers the `if` statements and ternary expressions (`... ? ... : ...`) to
+the same `Expr` value, so JSExpr cannot distinguish between the two.
+This poses an issue because JavaScript does not allow non-expression statements
+(e.g., loops and variable declarations) inside of a ternary expression.
+There are plans to implement a heuristic to emit a ternary expression if
+  appropriate (e.g., if the bodies of the ternary expression contains only one
+  sub-expression) but this is not implemented yet.
