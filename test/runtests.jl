@@ -1,6 +1,6 @@
 using JSExpr
 using WebIO
-import WebIO: scopeid
+import WebIO: scopeid, obsid
 using Test
 
 @testset "@js_str" begin
@@ -76,9 +76,9 @@ end
         @test_throws ErrorException @js $ob
 
         ob = Observable{Any}(w, "test", nothing)
-        @test @js($ob) == js"{\"name\":\"test\",\"scope\":$(scopeid(w)),\"id\":\"ob_02\",\"type\":\"observable\"}"
+        @test @js($ob) == js"{\"name\":\"test\",\"scope\":$(scopeid(w)),\"id\":$(obsid(ob)),\"type\":\"observable\"}"
 
-        @test @js($ob[]) == js"WebIO.getval({\"name\":\"test\",\"scope\":$(scopeid(w)),\"id\":\"ob_02\",\"type\":\"observable\"})"
-        @test @js($ob[] = 1) == js"WebIO.setval({\"name\":\"test\",\"scope\":$(scopeid(w)),\"id\":\"ob_02\",\"type\":\"observable\"},1)"
+        @test @js($ob[]) == js"WebIO.getval({\"name\":\"test\",\"scope\":$(scopeid(w)),\"id\":$(obsid(ob)),\"type\":\"observable\"})"
+        @test @js($ob[] = 1) == js"WebIO.setval({\"name\":\"test\",\"scope\":$(scopeid(w)),\"id\":$(obsid(ob)),\"type\":\"observable\"},1)"
     end
 end
