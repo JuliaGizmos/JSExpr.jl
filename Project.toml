@@ -10,6 +10,8 @@ Observables = "510215fc-4207-5dde-b226-833fc4488ee2"
 WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
 
 [compat]
+JSON = "0.18, 0.19, 0.20, 0.21"
+MacroTools = "0.4, 0.5"
 Observables = "0.2.2,0.3"
 WebIO = "0.8.5"
 julia = "0.7, 1"
