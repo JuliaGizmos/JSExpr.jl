@@ -1,7 +1,7 @@
 name = "JSExpr"
 uuid = "97c1335a-c9c5-57fe-bc5d-ec35cebe8660"
 license = "MIT"
-version = "0.5.2"
+version = "0.5.3"
 
 [deps]
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
@@ -12,7 +12,7 @@ WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
 [compat]
 JSON = "0.18, 0.19, 0.20, 0.21"
 MacroTools = "0.4, 0.5"
-Observables = "0.2.2,0.3"
+Observables = "0.2.2, 0.3, 0.4"
 WebIO = "0.8.5"
 julia = "0.7, 1"
 
